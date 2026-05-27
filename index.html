@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G2QMJNENRV"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-G2QMJNENRV');
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Disable Google Translate -->
+    <meta name="google" content="notranslate">
+    
+    <!-- Primary Meta Tags -->
+    <title>Hamster Chat | Next-Gen Secure Messaging</title>
+    <meta name="title" content="Hamster Chat | Next-Gen Secure Messaging">
+    <meta name="description" content="Experience the future of communication with Hamster Chat. Secure, fast, and feature-rich messaging with AI integration, stories, and global search. Developed by Assem Abu Al-Nasr.">
+    <meta name="keywords" content="Hamster Chat, Messaging App, Secure Chat, PWA, Assem Abu Al-Nasr, Gemini AI, Real-time communication">
+    <meta name="author" content="Assem Abu Al-Nasr">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ralball74.github.io/Hamster-Chat/">
+    <meta property="og:title" content="Hamster Chat | The Future of Messaging">
+    <meta property="og:description" content="Secure messaging with premium design. AI-powered assistant and high-end privacy. Join Hamster Chat today.">
+    <meta property="og:image" content="assets/logo.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ralball74.github.io/Hamster-Chat/">
+    <meta property="twitter:title" content="Hamster Chat | Next-Gen Messaging">
+    <meta property="twitter:description" content="Secure messaging with premium design. AI-powered assistant and high-end privacy.">
+    <meta property="twitter:image" content="assets/logo.jpg">
+
+    <!-- PWA & Mobile Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6d28d9">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/style.css?v=5">
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+    <style>
+        img {
+            -webkit-user-drag: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Container -->
+    <div id="hamster-app" class="hidden">
+        <!-- Sidebar Navigation -->
+        <nav class="side-rail">
+            <div class="logo-circle"><img src="assets/logo.jpg" alt="Hamster Logo"></div>
+            <div class="nav-links">
+                <button class="nav-item active" data-page="chats" title="Messages"><i
+                        data-lucide="message-circle"></i></button>
+                <button class="nav-item" data-page="stories" title="Stories" style="position: relative;">
+                    <i data-lucide="circle-dashed"></i>
+                    <div id="stories-nav-badge" class="hidden" style="position: absolute; top: 6px; right: 8px; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 0 2px var(--glass-panel-solid); border: 1px solid white;"></div>
+                </button>
+                <button class="nav-item" data-page="archive" title="Archive"><i data-lucide="archive"></i></button>
+            </div>
+            <div class="nav-bottom">
+                <button class="nav-item" data-page="settings" title="Settings"><i data-lucide="settings"></i></button>
+                <div id="current-user-avatar" class="user-avatar-trigger">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: white;"></div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Listing Area -->
+        <aside class="content-sidebar">
+            <header class="sidebar-header">
+                <div class="sidebar-header-top">
+                    <h1 id="page-title">Chats</h1>
+                    <div id="mobile-user-avatar" class="user-avatar-trigger"
+                        style="width: 36px; height: 36px; border-radius: 50%; background: white; cursor: pointer; flex-shrink: 0;">
+                    </div>
+                </div>
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="global-search" placeholder="Search accounts and chats...">
+                </div>
+                <div class="sidebar-tabs" id="sidebar-tabs-container"></div>
+            </header>
+
+            <div id="sidebar-list" class="scrollbar-hidden">
+                <div class="info-state" style="margin-top: 50px;">Initializing Hamster...</div>
+            </div>
+
+            <button id="main-action-btn" class="fab-btn">
+                <i data-lucide="plus"></i>
+            </button>
+        </aside>
+
+        <!-- Focus Area -->
+        <main class="main-stage">
+            <div id="empty-state" class="stage-overlay">
+            </div>
+
+            <div id="chat-window" class="hidden">
+                <!-- Javascript will inject chat logic here -->
+            </div>
+
+            <div id="page-content" class="hidden stage-overlay">
+                <!-- Javascript will inject settings/profile forms here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Login Authentication Overlay -->
+    <div id="auth-overlay" class="hidden">
+        <div class="auth-container" id="auth-container">
+            <!-- Sign In Panel -->
+            <div class="auth-form-container sign-in">
+                <div class="auth-form">
+                    <div class="auth-logo">
+                        <img src="assets/logo.jpg" alt="Hamster Logo">
+                    </div>
+                    <h1>Welcome Back</h1>
+                    <p>Rejoin the most beautiful and secure messaging experience.</p>
+                    <button class="auth-google-btn" onclick="app.login()">
+                        <img src="assets/Google.png" alt="Google">
+                        Sign in with Google
+                    </button>
+                    <span class="auth-footnote">Privacy is our priority. No trackers.</span>
+                    <button class="auth-mobile-toggle"
+                        onclick="document.getElementById('auth-container').classList.add('active')">
+                        New to Hamster? <span>Learn More</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Benefits/Showcase Panel -->
+            <div class="auth-form-container benefits-view">
+                <div class="auth-form">
+                    <div class="benefits-icons">
+                        <i data-lucide="shield-check"></i>
+                        <i data-lucide="zap"></i>
+                        <i data-lucide="layout"></i>
+                    </div>
+                    <h1>Hamster Premium</h1>
+                    <p>End-to-end encrypted messaging with hardware-accelerated glassmorphism patterns.</p>
+                    <button class="auth-mobile-toggle"
+                        onclick="document.getElementById('auth-container').classList.remove('active')">
+                        Ready to sign in? <span>Go Back</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sliding Toggle -->
+            <div class="auth-toggle-container">
+                <div class="auth-toggle">
+                    <div class="auth-toggle-panel auth-toggle-left">
+                        <h1>New to Hamster?</h1>
+                        <p>Discover a minimal paradigm designed for focused collaboration.</p>
+                        <button class="auth-sec-btn"
+                            onclick="document.getElementById('auth-container').classList.remove('active')">Back to
+                            Login</button>
+                    </div>
+                    <div class="auth-toggle-panel auth-toggle-right">
+                        <h1>Secure. Pure.</h1>
+                        <p>Experience the future of real-time communication today.</p>
+                        <button class="auth-sec-btn"
+                            onclick="document.getElementById('auth-container').classList.add('active')">Learn
+                            More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Lock Overlay -->
+    <div id="app-lock-overlay" class="hidden">
+        <div class="lock-container">
+            <img src="assets/logo.jpg" alt="Logo" class="lock-logo">
+            <h2 id="lock-title">Hamster Locked</h2>
+            <div class="pin-display" id="pin-display">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+            <div class="pin-numpad">
+                <button class="numpad-btn" onclick="app.handlePinInput('1')">1</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('2')">2</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('3')">3</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('4')">4</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('5')">5</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('6')">6</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('7')">7</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('8')">8</button>
+                <button class="numpad-btn" onclick="app.handlePinInput('9')">9</button>
+                <button class="numpad-btn" style="visibility: hidden;"></button>
+                <button class="numpad-btn" onclick="app.handlePinInput('0')">0</button>
+                <button class="numpad-btn" onclick="app.clearPin()"><i data-lucide="delete"></i></button>
+            </div>
+            <button id="lock-logout-btn" class="btn-ghost" style="margin-top: 40px; border: none !important; color: white; opacity: 0.6;" onclick="app.logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <!-- General Universal Interactions Modal -->
+    <div id="modal-overlay" class="hidden">
+        <div id="modal-content" class="modal-card"></div>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div id="install-prompt">
+        <div class="prompt-content">
+            <img src="assets/logo.jpg" alt="Hamster" class="prompt-icon">
+            <div class="prompt-text">
+                <h4 id="prompt-title">Get Hamster App</h4>
+                <p id="prompt-desc">Install for a better experience</p>
+            </div>
+        </div>
+        <div class="prompt-actions">
+            <button class="btn-ghost" onclick="app.dismissInstall()" style="font-size: 13px; padding: 6px 12px; border: none !important;">Later</button>
+            <button class="glass-btn" onclick="app.installApp()" style="font-size: 13px; padding: 6px 14px; border-radius: 10px;">Download</button>
+        </div>
+    </div>
+
+    <!-- Call Status Overlay -->
+    <div id="call-overlay" class="hidden" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(10px); z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+        <!-- Call Top Bar (Visible in full mode) -->
+        <div id="call-top-bar" style="position: absolute; top: 0; left: 0; right: 0; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; z-index: 5;">
+            <div id="call-network-quality" title="Network Quality" style="display: flex; align-items: center; gap: 8px; color: #10b981; font-size: 13px; font-weight: 600; background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 20px; backdrop-filter: blur(5px);">
+                <i data-lucide="signal"></i>
+                <span>Excellent</span>
+            </div>
+            <button onclick="app.toggleCallMinimize()" style="background: rgba(255,255,255,0.1); border: none; width: 44px; height: 44px; border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: all 0.2s;">
+                <i data-lucide="minimize-2"></i>
+            </button>
+        </div>
+
+        <audio id="call-ringtone-audio" src="assets/audio/callringtone.mp3" loop></audio>
+
+        <!-- Remote Video (full background) -->
+        <div id="remote-video-container" style="position: absolute; inset: 0; z-index: 0; display: none;"></div>
+        <!-- Local Video (small pip) -->
+        <div id="local-video-container" style="position: absolute; top: 20px; right: 20px; width: 130px; height: 180px; border-radius: 16px; overflow: hidden; z-index: 2; box-shadow: 0 8px 32px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.15); display: none;"></div>
+        
+        <div id="call-center-ui" style="text-align: center; z-index: 1; position: relative;">
+            <!-- Dual Avatar Row -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 28px;">
+                <!-- My avatar (caller) -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <img id="call-my-avatar" src="assets/logo.jpg" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); box-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    <span id="call-my-name" style="color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 500;"></span>
+                </div>
+                <!-- Animated connector -->
+                <div style="display: flex; align-items: center; gap: 4px; padding: 0 14px; margin-bottom: 22px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); animation: callDot 1.4s ease-in-out infinite 0s;"></div>
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.5); animation: callDot 1.4s ease-in-out infinite 0.2s;"></div>
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); animation: callDot 1.4s ease-in-out infinite 0.4s;"></div>
+                </div>
+                <!-- Partner avatar (callee) -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <img id="call-avatar" src="assets/logo.jpg" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); box-shadow: 0 0 30px rgba(99, 102, 241, 0.5); animation: pulse 2s infinite;">
+                    <span id="call-name" style="color: white; font-size: 12px; font-weight: 600;"></span>
+                </div>
+            </div>
+            <p id="call-status" style="color: rgba(255, 255, 255, 0.7); font-size: 16px; margin: 0 0 40px; letter-spacing: 1px;">Calling...</p>
+            
+            <div id="call-actions-incoming" class="hidden" style="display: flex; gap: 24px; justify-content: center;">
+                <button onclick="app.answerCall()" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: #10b981; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);"><i data-lucide="phone"></i></button>
+                <button onclick="app.rejectCall()" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);"><i data-lucide="phone-off"></i></button>
+            </div>
+
+            <div id="call-actions-active" class="hidden" style="display: flex; gap: 24px; justify-content: center; align-items: center;">
+                <button id="call-mute-btn" onclick="app.toggleMuteCall()" style="width: 56px; height: 56px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i data-lucide="mic"></i></button>
+                <button id="call-cam-btn" onclick="app.toggleCameraCall()" style="width: 56px; height: 56px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; display: none;"><i data-lucide="video"></i></button>
+                <button onclick="app.endCall()" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);"><i data-lucide="phone-off"></i></button>
+            </div>
+            
+            <div id="call-actions-outgoing" class="hidden" style="display: flex; gap: 24px; justify-content: center;">
+                <button onclick="app.endCall()" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);"><i data-lucide="phone-off"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Call Status Overlay -->
+    <div id="group-call-overlay" class="hidden minimized-gc">
+        <!-- Top Header Bar -->
+        <div class="gc-header">
+            <div class="gc-header-left">
+                <img id="gc-group-avatar" src="assets/logo.jpg">
+                <div>
+                    <h3 id="gc-group-name">Group Call</h3>
+                    <span id="gc-status-text">Connecting...</span>
+                </div>
+            </div>
+            
+            <div class="gc-header-right">
+                <div id="gc-timer">00:00</div>
+                <button onclick="app.toggleGroupCallMinimize()" class="gc-minimize-btn">
+                    <i data-lucide="minimize-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Call Ringtone -->
+        <audio id="gc-ringtone-audio" src="assets/audio/callringtone.mp3" loop></audio>
+
+        <!-- Main Content Area: Adaptable Participant Grid -->
+        <div id="gc-main-area">
+            
+            <!-- Incoming Group Call Banner (visible only when ringing for us) -->
+            <div id="gc-incoming-ui" class="hidden">
+                <img id="gc-incoming-avatar" src="assets/logo.jpg">
+                <div>
+                    <h2 id="gc-incoming-name">Group Call</h2>
+                    <p id="gc-incoming-desc">Incoming group call...</p>
+                </div>
+                <div class="gc-incoming-actions">
+                    <button onclick="app.answerGroupCall()" class="gc-btn-accept"><i data-lucide="phone"></i> Accept</button>
+                    <button onclick="app.rejectGroupCall()" class="gc-btn-decline"><i data-lucide="phone-off"></i> Decline</button>
+                </div>
+            </div>
+
+            <!-- The Grid itself (visible when calling/active) -->
+            <div id="gc-participants-grid">
+                <!-- Tiles will be dynamically rendered here -->
+            </div>
+        </div>
+
+        <!-- Floating Controls Panel -->
+        <div id="gc-controls">
+            <div class="gc-controls-bar">
+                <!-- Mute mic button -->
+                <button id="gc-mute-btn" onclick="app.toggleMuteGroupCall()" class="gc-control-btn"><i data-lucide="mic"></i></button>
+                
+                <!-- Toggle camera button -->
+                <button id="gc-cam-btn" onclick="app.toggleCameraGroupCall()" class="gc-control-btn"><i data-lucide="video"></i></button>
+                
+                <!-- End call button -->
+                <button onclick="app.leaveGroupCall()" class="gc-control-btn gc-btn-end"><i data-lucide="phone-off"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Image Viewer (Lightbox) -->
+    <div id="image-viewer" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); z-index: 20000; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 15px;">
+            <button id="download-img-btn" class="nav-item" style="background: rgba(255,255,255,0.1); width: 45px; height: 45px;" title="Download"><i data-lucide="download"></i></button>
+            <button onclick="app.closeImageViewer()" class="nav-item" style="background: rgba(255,255,255,0.1); width: 45px; height: 45px;"><i data-lucide="x"></i></button>
+        </div>
+        <img id="full-view-image" src="" style="max-width: 95%; max-height: 85vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+    </div>
+
+    <!-- Entry Script -->
+    <script type="module" src="js/app.js?v=1"></script>
+</body>
+
+</html>

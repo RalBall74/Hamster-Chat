@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ralball74.github.io/Hamster-Chat/sitemap.xml
