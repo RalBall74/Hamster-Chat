@@ -7,9 +7,9 @@ import {
 import { extendAuth } from './auth.js';
 import { extendCalls } from './calls.js';
 import { extendAI } from './ai.js';
-import { extendStories } from './stories.js?v=1';
+import { extendStories } from './stories.js?v=6';
 import { extendUI } from './ui.js';
-import { extendSettings } from './settings.js?v=1';
+import { extendSettings } from './settings.js?v=6';
 import { extendAdmin } from './admin.js';
 import { extendMedia } from './media.js';
 import { extendE2E } from './E2E.js';
@@ -74,6 +74,7 @@ class HamsterApp {
         this.activeCallListener = null;
         this.currentCallData = null;
 
+        this._typingBubbleVisible = false;
         this.init();
     }
 
@@ -208,6 +209,15 @@ class HamsterApp {
     handleNavigation(page) {
         this.currentPage = page;
         this.closeMobileOverlay(); // Close any active overlays when switching nav
+        document.body.setAttribute('data-page', page);
+
+        // Trigger animation for sidebar
+        const sidebarList = document.getElementById('sidebar-list');
+        if (sidebarList) {
+            sidebarList.style.animation = 'none';
+            sidebarList.offsetHeight; /* trigger reflow */
+            sidebarList.style.animation = 'page-slide-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards';
+        }
 
         document.querySelectorAll('.nav-item').forEach(b => {
             if (b.dataset.page) b.classList.toggle('active', b.dataset.page === page);
@@ -257,6 +267,11 @@ class HamsterApp {
             this.partnerUnsubscribe();
             this.partnerUnsubscribe = null;
         }
+        if (this._typingBubbleUnsub) {
+            this._typingBubbleUnsub();
+            this._typingBubbleUnsub = null;
+        }
+        this._typingBubbleVisible = false;
         document.getElementById('chat-window').classList.add('hidden');
         document.getElementById('page-content').classList.add('hidden');
         this.activeChatId = null;
@@ -892,6 +907,7 @@ class HamsterApp {
         lucide.createIcons();
 
         this.listenForMessages(chatId);
+        this.listenForTypingBubble(chatId);
 
         if (chat.type !== 'group') {
             const partnerId = chat.memberIds.find(id => id !== this.user.uid);
@@ -1163,7 +1179,9 @@ class HamsterApp {
                 this.currentMessages[msgId] = msg;
             });
 
-            messagesHTML += decryptedDocs.filter(({ msg }) => msg.status !== 'scheduled').map(({ msgId, msg }) => {
+            const renderedDocs = decryptedDocs.filter(({ msg }) => msg.status !== 'scheduled');
+
+            messagesHTML += renderedDocs.map(({ msgId, msg }, index) => {
                 // Handle System Messages
                 if (msg.type === 'system') {
                     return `
@@ -1175,7 +1193,33 @@ class HamsterApp {
                     `;
                 }
 
+                const prevDoc = index > 0 ? renderedDocs[index - 1].msg : null;
+                const nextDoc = index < renderedDocs.length - 1 ? renderedDocs[index + 1].msg : null;
+
                 const isMine = msg.senderId === this.user.uid;
+
+                let isGroupStart = true;
+                let isGroupEnd = true;
+
+                if (prevDoc && prevDoc.type !== 'system' && prevDoc.senderId === msg.senderId) {
+                    const timeDiff = (msg.createdAt?.toMillis() || 0) - (prevDoc.createdAt?.toMillis() || 0);
+                    if (timeDiff < 5 * 60 * 1000) { // 5 mins
+                        isGroupStart = false;
+                    }
+                }
+
+                if (nextDoc && nextDoc.type !== 'system' && nextDoc.senderId === msg.senderId) {
+                    const timeDiff = (nextDoc.createdAt?.toMillis() || 0) - (msg.createdAt?.toMillis() || 0);
+                    if (timeDiff < 5 * 60 * 1000) {
+                        isGroupEnd = false;
+                    }
+                }
+
+                let groupingClass = '';
+                if (!isGroupStart && !isGroupEnd) groupingClass = 'group-middle';
+                else if (!isGroupStart && isGroupEnd) groupingClass = 'group-end';
+                else if (isGroupStart && !isGroupEnd) groupingClass = 'group-start';
+                else groupingClass = 'group-single';
 
                 // Mark as read if received and in active chat and window focused
                 // GHOST MODE: Skip marking as read if user enabled ghostMode
@@ -1185,13 +1229,13 @@ class HamsterApp {
                 }
 
                 let senderLabel = '';
-                if (!isMine && chat?.type === 'group') {
+                if (isGroupStart && !isMine && chat?.type === 'group') {
                     const senderName = chat.memberData[msg.senderId]?.name || 'User';
                     senderLabel = `<div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px; margin-left: 6px;">${senderName}</div>`;
                 }
 
                 let contentStr = '';
-                let extraBubbleClass = '';
+                let extraBubbleClass = groupingClass;
                 if (msg.isViewOnce) {
                     const isOpened = msg.viewOnceState === 'opened';
                     if (isOpened) {
@@ -1451,6 +1495,18 @@ class HamsterApp {
             }
 
             lucide.createIcons();
+
+            // Re-inject typing bubble if it was visible (innerHTML wipes it)
+            if (this._typingBubbleVisible) {
+                const chat = this.allChats.find(c => c.id === chatId);
+                const typingUsers = Object.keys(chat?.typing || {}).filter(uid => uid !== this.user.uid && chat.typing[uid] === true);
+                let typerPhoto = 'assets/logo.jpg';
+                if (chat && typingUsers[0] && chat.memberData?.[typingUsers[0]]) {
+                    typerPhoto = chat.memberData[typingUsers[0]].photo || typerPhoto;
+                }
+                this._typingBubbleVisible = false; // Reset so updateTypingBubble will re-add
+                this.updateTypingBubble(true, typerPhoto);
+            }
         });
     }
 
@@ -1458,6 +1514,82 @@ class HamsterApp {
         this.isLoadingMore = true;
         this.messageLimit += 50;
         this.listenForMessages(chatId);
+    }
+
+
+    // --- Typing Bubble Indicator ---
+
+    listenForTypingBubble(chatId) {
+        if (this._typingBubbleUnsub) {
+            this._typingBubbleUnsub();
+            this._typingBubbleUnsub = null;
+        }
+        this._typingBubbleVisible = false;
+
+        this._typingBubbleUnsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
+            if (this.activeChatId !== chatId) return;
+            const data = snap.data();
+            if (!data) return;
+
+            const typingUsers = Object.keys(data.typing || {}).filter(uid => uid !== this.user.uid && data.typing[uid] === true);
+            const isTyping = typingUsers.length > 0;
+
+            // Also update header status text
+            const statusEl = document.getElementById('chat-status');
+            if (statusEl && isTyping) {
+                statusEl.innerText = this.lang === 'ar' ? 'يكتب الآن...' : 'Typing...';
+                statusEl.style.color = 'var(--online)';
+            }
+
+            // Get typer info for avatar
+            let typerPhoto = 'assets/logo.jpg';
+            const chat = this.allChats.find(c => c.id === chatId);
+            if (chat && typingUsers[0] && chat.memberData?.[typingUsers[0]]) {
+                typerPhoto = chat.memberData[typingUsers[0]].photo || typerPhoto;
+            }
+
+            this.updateTypingBubble(isTyping, typerPhoto);
+        });
+    }
+
+    updateTypingBubble(show, avatarSrc = 'assets/logo.jpg') {
+        const container = document.getElementById('messages-area');
+        if (!container) return;
+
+        const existing = container.querySelector('.typing-bubble-container');
+
+        if (show && !this._typingBubbleVisible) {
+            // Show typing bubble
+            this._typingBubbleVisible = true;
+            if (existing) existing.remove();
+
+            const bubbleHTML = `
+                <div class="typing-bubble-container" id="typing-bubble">
+                    <img src="${avatarSrc}" class="typing-bubble-avatar" onerror="this.src='https://ui-avatars.com/api/?name=U'">
+                    <div class="typing-bubble">
+                        <div class="typing-bubble-dot"></div>
+                        <div class="typing-bubble-dot"></div>
+                        <div class="typing-bubble-dot"></div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', bubbleHTML);
+
+            // Auto-scroll to show typing bubble
+            const isNearBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 120;
+            if (isNearBottom) {
+                requestAnimationFrame(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+            }
+        } else if (!show && this._typingBubbleVisible) {
+            // Hide typing bubble with animation
+            this._typingBubbleVisible = false;
+            if (existing) {
+                existing.classList.add('hiding');
+                setTimeout(() => existing.remove(), 250);
+            }
+        }
     }
 
     scrollToMessage(msgId) {

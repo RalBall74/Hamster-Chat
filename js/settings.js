@@ -182,24 +182,109 @@ export function extendSettings(HamsterApp) {
         document.getElementById('chat-window').classList.add('hidden');
         document.getElementById('empty-state').classList.add('hidden');
 
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        const showLastSeen = this.userData?.privacy?.showLastSeen !== false;
-        const ghostMode = !!this.userData?.privacy?.ghostMode;
-        const appLockEnabled = !!this.userData?.appLockPin;
+        container.innerHTML = `
+            <div class="page-container tg-settings-container" style="max-height: 100%; overflow-y: auto; padding-bottom: 40px; background: transparent;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <button class="mobile-back-btn" onclick="app.handleNavigation('chats')" style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; color: var(--text-primary); font-size: 16px; font-weight: 600; cursor: pointer; padding: 0;">
+                        <i data-lucide="arrow-left" style="width: 24px; height: 24px;"></i>
+                    </button>
+                    <div style="flex:1"></div>
+                </div>
 
+                <!-- Avatar Section -->
+                <div style="text-align: center; margin-bottom: 32px; cursor: pointer;" onclick="app.renderProfilePage()">
+                    <div style="position: relative; display: inline-block;">
+                        <img src="${this.userData.photoURL}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                        <div style="position: absolute; bottom: 0; right: 0; width: 32px; height: 32px; background: #3b82f6; border-radius: 50%; border: 3px solid var(--glass-panel-solid); display: flex; align-items: center; justify-content: center; color: white;">
+                            <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+                        </div>
+                    </div>
+                    <h2 style="margin: 16px 0 4px; font-size: 22px; font-weight: 700; color: var(--text-primary);">${this.userData.displayName}</h2>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; font-weight: 500;">@${this.userData.username}</p>
+                </div>
+
+                <!-- Settings List Container -->
+                <div style="background: var(--glass-panel-solid); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm);">
+                    
+                    <div class="tg-settings-item" onclick="app.renderProfilePage()" style="display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: background 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #3b82f6; display: flex; align-items: center; justify-content: center; margin-inline-end: 16px; color: white; flex-shrink: 0;">
+                            <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div style="flex: 1; text-align: start;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 15.5px; margin-bottom: 2px;">${this.lang === 'ar' ? 'الحساب' : 'Account'}</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary);">${this.lang === 'ar' ? 'الاسم، اسم المستخدم، النبذة' : 'Username, Bio'}</div>
+                        </div>
+                    </div>
+
+                    <div class="tg-settings-item" onclick="app.renderChatSettingsPage()" style="display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: background 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #f59e0b; display: flex; align-items: center; justify-content: center; margin-inline-end: 16px; color: white; flex-shrink: 0;">
+                            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div style="flex: 1; text-align: start;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 15.5px; margin-bottom: 2px;">${this.lang === 'ar' ? 'إعدادات المحادثة' : 'Chat Settings'}</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary);">${this.lang === 'ar' ? 'الخلفية، المظهر، التأثيرات' : 'Wallpaper, Night Mode, Animations'}</div>
+                        </div>
+                    </div>
+
+                    <div class="tg-settings-item" onclick="app.renderPrivacySettingsPage()" style="display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: background 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #10b981; display: flex; align-items: center; justify-content: center; margin-inline-end: 16px; color: white; flex-shrink: 0;">
+                            <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div style="flex: 1; text-align: start;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 15.5px; margin-bottom: 2px;">${this.lang === 'ar' ? 'الخصوصية والأمان' : 'Privacy & Security'}</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary);">${this.lang === 'ar' ? 'آخر ظهور، الأجهزة، رموز المرور' : 'Last Seen, Devices, Passkeys'}</div>
+                        </div>
+                    </div>
+
+                    <div class="tg-settings-item" onclick="app.renderLanguagePage()" style="display: flex; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #8b5cf6; display: flex; align-items: center; justify-content: center; margin-inline-end: 16px; color: white; flex-shrink: 0;">
+                            <i data-lucide="globe" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div style="flex: 1; text-align: start;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 15.5px; margin-bottom: 2px;">${this.lang === 'ar' ? 'اللغة' : 'Language'}</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary);">${this.lang === 'ar' ? 'العربية' : 'English'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                ${(this.userData?.isAdmin || this.userData?.isadmin || this.userData?.privacy?.isadmin) ? `
+                <div style="margin-top: 24px; background: var(--glass-panel-solid); border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm);">
+                    <div class="tg-settings-item" onclick="app.renderAdminDashboard()" style="display: flex; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ef4444; display: flex; align-items: center; justify-content: center; margin-inline-end: 16px; color: white; flex-shrink: 0;">
+                            <i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div style="flex: 1; text-align: start;">
+                            <div style="font-weight: 600; color: var(--danger); font-size: 15.5px; margin-bottom: 2px;">Admin Panel</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary);">Review Reports</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        lucide.createIcons();
+        
+        // Add hover styles dynamically if not in CSS
+        if (!document.getElementById('tg-settings-style')) {
+            const style = document.createElement('style');
+            style.id = 'tg-settings-style';
+            style.innerHTML = `
+                .tg-settings-item:hover { background: var(--glass-hover) !important; }
+            `;
+            document.head.appendChild(style);
+        }
+    };
+
+    HamsterApp.prototype.renderChatSettingsPage = function() {
+        const container = document.getElementById('page-content');
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
         container.innerHTML = `
             <div class="page-container" style="max-height: 100%; overflow-y: auto; padding-bottom: 40px;">
                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 32px;">
-                    <button class="mobile-back-btn" onclick="app.handleNavigation('chats')"><i data-lucide="chevron-left"></i></button>
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: var(--text-primary);">${this.t('settings')}</h1>
+                    <button class="mobile-back-btn" onclick="app.renderSettingsPage()"><i data-lucide="chevron-left"></i></button>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">${this.lang === 'ar' ? 'إعدادات المحادثة' : 'Chat Settings'}</h1>
                 </div>
-                <div class="form-group">
-                    <label>${this.t('language')}</label>
-                    <select id="lang-sel" onchange="app.setLang(this.value)">
-                        <option value="en" ${this.lang === 'en' ? 'selected' : ''}>English</option>
-                        <option value="ar" ${this.lang === 'ar' ? 'selected' : ''}>العربية</option>
-                    </select>
-                </div>
+                
                 <div class="form-group">
                     <label>${this.t('app_theme')}</label>
                     <select id="theme-sel" onchange="app.setTheme(this.value)">
@@ -207,30 +292,8 @@ export function extendSettings(HamsterApp) {
                         <option value="dark" ${currentTheme === 'dark' ? 'selected' : ''}>${this.t('dark_mode')}</option>
                     </select>
                 </div>
-                <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 12px; letter-spacing: 0.5px;">Privacy & Security</h3>
-                <div class="privacy-item">
-                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'قفل التطبيق' : 'App Lock'}</h4><p>${this.lang === 'ar' ? 'حماية التطبيق برمز PIN' : 'Require PIN'}</p></div>
-                    <div class="toggle-switch ${appLockEnabled ? 'active' : ''}" onclick="app.toggleAppLock()"></div>
-                </div>
-                <div class="privacy-item">
-                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'آخر ظهور' : 'Last Seen'}</h4><p>${this.lang === 'ar' ? 'إظهار وقت تواجدك للآخرين' : 'Share last seen'}</p></div>
-                    <div class="toggle-switch ${showLastSeen ? 'active' : ''}" onclick="app.togglePrivacy('showLastSeen')"></div>
-                </div>
-                <div class="privacy-item">
-                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'وضع الشبح' : 'Ghost Mode'}</h4><p>${this.lang === 'ar' ? 'إخفاء علامة الصح الزرقاء' : 'Hide blue ticks'}</p></div>
-                    <div class="toggle-switch ${ghostMode ? 'active' : ''}" onclick="app.togglePrivacy('ghostMode')"></div>
-                </div>
-                <div class="form-group" style="margin-top: 16px;">
-                    <label>${this.lang === 'ar' ? 'تأثير الصوت (للخصوصية)' : 'Voice Effect (Privacy)'}</label>
-                    <select id="voice-effect-sel" onchange="app.setVoiceEffect(this.value)">
-                        <option value="none" ${this.userData?.settings?.voiceEffect === 'none' || !this.userData?.settings?.voiceEffect ? 'selected' : ''}>${this.lang === 'ar' ? 'صوتي الطبيعي' : 'My Voice'}</option>
-                        <option value="deep" ${this.userData?.settings?.voiceEffect === 'deep' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت ضخم' : 'Deep Voice'}</option>
-                        <option value="thin" ${this.userData?.settings?.voiceEffect === 'thin' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت رفيع' : 'Thin Voice'}</option>
-                        <option value="distorted" ${this.userData?.settings?.voiceEffect === 'distorted' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت مشوه' : 'Distorted'}</option>
-                    </select>
-                </div>
-                <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 12px; letter-spacing: 0.5px;">Chat Customization</h3>
-                <div class="privacy-item" style="border: none;">
+
+                <div class="privacy-item" style="border: none; margin-top: 24px;">
                     <div class="privacy-info"><h4>${this.lang === 'ar' ? 'خلفية المحادثة' : 'Chat Wallpaper'}</h4><p>${this.lang === 'ar' ? 'اختر صورة من جهازك' : 'Set custom image'}</p></div>
                     <label class="glass-btn" style="padding: 8px 16px; font-size: 13px; border-radius: 10px; cursor: pointer;">
                         <i data-lucide="image" style="width:16px; margin-right: 6px;"></i> ${this.lang === 'ar' ? 'رفع صورة' : 'Upload'}
@@ -240,18 +303,8 @@ export function extendSettings(HamsterApp) {
                 ${this.userData?.wallpaper ? `
                 <div style="margin-top: 12px; position: relative; width: 100%; height: 120px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border);">
                     <img src="${this.userData.wallpaper}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.6;">
-                    <button onclick="app.setWallpaper('')" style="position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                    <button onclick="app.setWallpaper(''); setTimeout(() => app.renderChatSettingsPage(), 100);" style="position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i data-lucide="trash-2" style="width:16px;"></i></button>
                     <div style="position: absolute; bottom: 10px; left: 15px; color: var(--text-primary); font-size: 12px; font-weight: 600;">Current Wallpaper</div>
-                </div>
-                ` : ''}
-                <hr style="margin: 32px 0; border: none; border-top: 1px solid var(--glass-border);">
-                <button class="glass-btn" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px;" onclick="app.showAlert(app.lang === 'ar' ? 'تم الحفظ' : 'Preferences Saved', app.lang === 'ar' ? 'تم حفظ التفضيلات بنجاح.' : 'Settings updated successfully.')">${this.t('commit')}</button>
-                ${(this.userData?.isAdmin || this.userData?.isadmin || this.userData?.privacy?.isadmin) ? `
-                <div style="margin-top: 32px; border-top: 1px solid var(--glass-border); padding-top: 16px;">
-                    <h3 style="color: var(--danger); margin-bottom: 12px; font-size: 14px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Admin Panel</h3>
-                    <button class="glass-btn" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px; background: rgba(239, 68, 68, 0.1); color: var(--danger);" onclick="app.renderAdminDashboard()">
-                        <i data-lucide="shield-alert" style="width: 18px; margin-right: 8px;"></i> Review Reports
-                    </button>
                 </div>
                 ` : ''}
             </div>
@@ -259,13 +312,71 @@ export function extendSettings(HamsterApp) {
         lucide.createIcons();
     };
 
-    HamsterApp.prototype.toggleAppLock = async function() {
+    HamsterApp.prototype.renderPrivacySettingsPage = function() {
+        const container = document.getElementById('page-content');
+        const showLastSeen = this.userData?.privacy?.showLastSeen !== false;
+        const ghostMode = !!this.userData?.privacy?.ghostMode;
+        const appLockEnabled = !!this.userData?.appLockPin;
+        container.innerHTML = `
+            <div class="page-container" style="max-height: 100%; overflow-y: auto; padding-bottom: 40px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 32px;">
+                    <button class="mobile-back-btn" onclick="app.renderSettingsPage()"><i data-lucide="chevron-left"></i></button>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">${this.lang === 'ar' ? 'الخصوصية والأمان' : 'Privacy & Security'}</h1>
+                </div>
+
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'قفل التطبيق' : 'App Lock'}</h4><p>${this.lang === 'ar' ? 'حماية التطبيق برمز PIN' : 'Require PIN'}</p></div>
+                    <div class="toggle-switch ${appLockEnabled ? 'active' : ''}" onclick="app.toggleAppLock(true)"></div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'آخر ظهور' : 'Last Seen'}</h4><p>${this.lang === 'ar' ? 'إظهار وقت تواجدك للآخرين' : 'Share last seen'}</p></div>
+                    <div class="toggle-switch ${showLastSeen ? 'active' : ''}" onclick="app.togglePrivacy('showLastSeen', true)"></div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'وضع الشبح' : 'Ghost Mode'}</h4><p>${this.lang === 'ar' ? 'إخفاء علامة الصح الزرقاء' : 'Hide blue ticks'}</p></div>
+                    <div class="toggle-switch ${ghostMode ? 'active' : ''}" onclick="app.togglePrivacy('ghostMode', true)"></div>
+                </div>
+                <div class="form-group" style="margin-top: 24px;">
+                    <label>${this.lang === 'ar' ? 'تأثير الصوت (للخصوصية)' : 'Voice Effect (Privacy)'}</label>
+                    <select id="voice-effect-sel" onchange="app.setVoiceEffect(this.value)">
+                        <option value="none" ${this.userData?.settings?.voiceEffect === 'none' || !this.userData?.settings?.voiceEffect ? 'selected' : ''}>${this.lang === 'ar' ? 'صوتي الطبيعي' : 'My Voice'}</option>
+                        <option value="deep" ${this.userData?.settings?.voiceEffect === 'deep' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت ضخم' : 'Deep Voice'}</option>
+                        <option value="thin" ${this.userData?.settings?.voiceEffect === 'thin' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت رفيع' : 'Thin Voice'}</option>
+                        <option value="distorted" ${this.userData?.settings?.voiceEffect === 'distorted' ? 'selected' : ''}>${this.lang === 'ar' ? 'صوت مشوه' : 'Distorted'}</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    };
+
+    HamsterApp.prototype.renderLanguagePage = function() {
+        const container = document.getElementById('page-content');
+        container.innerHTML = `
+            <div class="page-container" style="max-height: 100%; overflow-y: auto; padding-bottom: 40px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 32px;">
+                    <button class="mobile-back-btn" onclick="app.renderSettingsPage()"><i data-lucide="chevron-left"></i></button>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">${this.lang === 'ar' ? 'اللغة' : 'Language'}</h1>
+                </div>
+                <div class="form-group">
+                    <label>${this.t('language')}</label>
+                    <select id="lang-sel" onchange="app.setLang(this.value)">
+                        <option value="en" ${this.lang === 'en' ? 'selected' : ''}>English</option>
+                        <option value="ar" ${this.lang === 'ar' ? 'selected' : ''}>العربية</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    };
+
+    HamsterApp.prototype.toggleAppLock = async function(fromPrivacyPage = false) {
         if (this.userData?.appLockPin) {
             this.showConfirm(this.lang === 'ar' ? 'إلغاء قفل التطبيق' : 'Disable Lock', this.lang === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?', async () => {
                 await updateDoc(doc(db, 'users', this.user.uid), { appLockPin: null });
                 this.userData.appLockPin = null;
                 localStorage.removeItem('hamster-lock-pin');
-                this.renderSettingsPage();
+                if (fromPrivacyPage === true) this.renderPrivacySettingsPage(); else this.renderSettingsPage();
             });
         } else {
             this.showPrompt(this.lang === 'ar' ? 'تعيين رمز قفل' : 'Set PIN', this.lang === 'ar' ? 'أدخل 4 أرقام:' : 'Enter 4 digits:', '', async (pin) => {
@@ -273,7 +384,7 @@ export function extendSettings(HamsterApp) {
                     await updateDoc(doc(db, 'users', this.user.uid), { appLockPin: pin });
                     this.userData.appLockPin = pin;
                     localStorage.setItem('hamster-lock-pin', pin);
-                    this.renderSettingsPage();
+                    if (fromPrivacyPage === true) this.renderPrivacySettingsPage(); else this.renderSettingsPage();
                 } else {
                     this.showAlert(this.lang === 'ar' ? 'خطأ' : 'Invalid', this.lang === 'ar' ? 'يجب أن يكون 4 أرقام.' : 'Must be 4 digits.');
                 }
@@ -298,7 +409,7 @@ export function extendSettings(HamsterApp) {
         await updateDoc(doc(db, 'users', this.user.uid), { wallpaper: url });
         const area = document.getElementById('messages-area');
         if (area) area.style.backgroundImage = url ? `url(${url})` : 'none';
-        this.renderSettingsPage();
+        this.renderChatSettingsPage();
     };
 
     HamsterApp.prototype.handleWallpaperUpload = function(event) {
@@ -322,13 +433,13 @@ export function extendSettings(HamsterApp) {
         reader.readAsDataURL(file);
     };
 
-    HamsterApp.prototype.togglePrivacy = async function(key) {
+    HamsterApp.prototype.togglePrivacy = async function(key, fromPrivacyPage = false) {
         const newState = !this.userData?.privacy?.[key];
         const updateObj = {};
         updateObj[`privacy.${key}`] = newState;
         await updateDoc(doc(db, 'users', this.user.uid), updateObj);
         this.userData.privacy = { ...(this.userData.privacy || {}), [key]: newState };
-        this.renderSettingsPage();
+        if (fromPrivacyPage === true) this.renderPrivacySettingsPage(); else this.renderSettingsPage();
     };
 
     HamsterApp.prototype.setVoiceEffect = async function(effect) {
