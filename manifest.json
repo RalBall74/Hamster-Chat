@@ -1,7 +1,7 @@
 {
     "name": "Hamster Chat",
     "short_name": "Hamster",
-    "description": "Premium messaging app",
+    "description": "Premium glassmorphism messaging app",
     "start_url": "index.html",
     "display": "standalone",
     "background_color": "#F0F2F5",
