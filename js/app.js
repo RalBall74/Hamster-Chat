@@ -75,6 +75,8 @@ class HamsterApp {
         this.currentCallData = null;
 
         this._typingBubbleVisible = false;
+        this._notifiedMessages = {};
+        this._firstChatLoadDone = false;
         this.init();
     }
 
@@ -481,6 +483,14 @@ class HamsterApp {
         onSnapshot(q, async (snapshot) => {
             let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+            // Track modified chats for notifications
+            const modifiedChatIds = [];
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'modified' || change.type === 'added') {
+                    modifiedChatIds.push(change.doc.id);
+                }
+            });
+
             // Async decrypt last message for sidebar preview
             docs = await Promise.all(docs.map(async chat => {
                 if (chat.lastMessage && chat.lastMessage.isE2E) {
@@ -519,6 +529,24 @@ class HamsterApp {
                     lastMessage: { text: this.lang === 'ar' ? 'أهلاً! أنا المساعد الذكي هامستر.' : 'Hello! I am Hamster AI assistant.' }
                 });
             }
+
+            // Process In-App Notifications
+            if (this._firstChatLoadDone) {
+                docs.forEach(chat => {
+                    if (modifiedChatIds.includes(chat.id) && chat.id !== this.activeChatId && chat.lastMessage && chat.lastMessage.senderId && chat.lastMessage.senderId !== this.user.uid) {
+                        const msgTimestamp = chat.lastMessage.createdAt?.toMillis ? chat.lastMessage.createdAt.toMillis() : Date.now();
+                        const lastNotified = this._notifiedMessages?.[chat.id] || 0;
+                        
+                        // Prevent duplicate notifications and ignore old messages (30 sec window)
+                        if (msgTimestamp > lastNotified && (Date.now() - msgTimestamp) < 30000) {
+                            if (!this._notifiedMessages) this._notifiedMessages = {};
+                            this._notifiedMessages[chat.id] = msgTimestamp;
+                            this.showInAppNotification(chat);
+                        }
+                    }
+                });
+            }
+            this._firstChatLoadDone = true;
 
             // Calculate total unread chats count
             const totalUnread = docs.reduce((acc, chat) => {
@@ -4588,6 +4616,47 @@ class HamsterApp {
     // --- Agora Voice & Video Call Logic ---
 
     // Note: Call methods moved to calls.js
+
+    // --- In-App Notification ---
+    showInAppNotification(chat) {
+        const toast = document.getElementById('in-app-notification');
+        if (!toast) return;
+
+        const partner = this.getChatPartner(chat);
+        const titleText = this.lang === 'ar' ? `رسالة جديدة من ${partner.name}` : `New message from ${partner.name}`;
+        
+        let msgText = chat.lastMessage?.text || (this.lang === 'ar' ? 'أرسل رسالة جديدة' : 'Sent a new message');
+        if (msgText.length > 45) {
+            msgText = msgText.substring(0, 45) + '...';
+        }
+
+        toast.innerHTML = `
+            <img src="${partner.photo || 'https://i.pravatar.cc/150'}" onerror="this.src='https://ui-avatars.com/api/?name=U'">
+            <div class="in-app-notification-content">
+                <div class="in-app-notification-title">${titleText}</div>
+                <div class="in-app-notification-msg">${msgText}</div>
+            </div>
+        `;
+
+        toast.onclick = () => {
+            this.handleNavigation('chats');
+            this.selectChat(chat.id);
+            toast.classList.remove('show');
+        };
+
+        toast.classList.remove('show');
+        
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+        });
+
+        if (this._toastTimer) clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 4500);
+    }
 
     getUnreadCountsUpdate(chat) {
         if (!chat) return {};
