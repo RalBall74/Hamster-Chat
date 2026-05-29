@@ -808,66 +808,6 @@ class HamsterApp {
         const isAI = chatId === this.user.uid + '_ai';
 
         let inputAreaHTML = `
-            <div class="input-area">
-                <div style="display: flex; flex-direction: column; gap: 8px; position: relative;" id="input-area-inner">
-                    <div id="reply-to-placeholder"></div>
-                    <div id="scheduled-messages-placeholder"></div>
-                    <div id="gif-picker-container" class="hidden" style="background: var(--glass-panel-solid); border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px; max-height: 250px; overflow-y: auto; position: absolute; bottom: calc(100% + 10px); left: 0; right: 0; z-index: 100;">
-                        <input type="text" id="gif-search" placeholder="${this.lang === 'ar' ? 'بحث عن ملصقات...' : 'Search stickers...'}" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--glass-bg); color: var(--text-primary); margin-bottom: 10px;" oninput="app.searchGiphy(this.value, '${chatId}')">
-                        <div id="gif-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;"></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <form id="msg-form" class="input-container" style="flex: 1;">
-                            <input type="text" id="msg-input" placeholder="${this.t('msg_placeholder')}" autocomplete="off" oninput="app.handleTyping('${chatId}')">
-                            ${!isAI ? `
-                            <div style="position: relative; display: flex; align-items: center;">
-                                <button type="button" onclick="app.toggleAttachmentMenu(event)" style="background: none; border: none; color: var(--text-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-right: 4px;" title="Attach">
-                                    <i data-lucide="paperclip" style="width: 20px;"></i>
-                                </button>
-                                <div id="attachment-menu" class="hidden" style="position: absolute; bottom: 50px; right: 0; background: var(--glass-panel-solid); border: 1px solid var(--glass-border); border-radius: 20px; padding: 12px; box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3); z-index: 101; display: flex; flex-direction: row; gap: 6px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); animation: popup-appear 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: bottom right;" onclick="event.stopPropagation()">
-                                    <label class="attachment-item">
-                                        <div class="icon-circle" style="background: rgba(59, 130, 246, 0.12);">
-                                            <i data-lucide="image" style="width: 20px; height: 20px; color: #3b82f6;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'صورة' : 'Image'}</span>
-                                        <input type="file" accept="image/*" style="display: none;" onchange="app.handleChatImageUpload(event, '${chatId}'); app.closeAttachmentMenu();">
-                                    </label>
-                                    <button type="button" class="attachment-item" onclick="app.toggleGifPicker('${chatId}'); app.closeAttachmentMenu();">
-                                        <div class="icon-circle" style="background: rgba(245, 158, 11, 0.12);">
-                                            <i data-lucide="smile" style="width: 20px; height: 20px; color: #f59e0b;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'ملصق' : 'Sticker'}</span>
-                                    </button>
-                                    <button type="button" class="attachment-item" onclick="app.showScheduleMessageModal('${chatId}'); app.closeAttachmentMenu();">
-                                        <div class="icon-circle" style="background: rgba(139, 92, 246, 0.12);">
-                                            <i data-lucide="clock" style="width: 20px; height: 20px; color: #8b5cf6;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'جدولة' : 'Schedule'}</span>
-                                    </button>
-                                    <button type="button" class="attachment-item" onclick="app.openCanvasPad('${chatId}'); app.closeAttachmentMenu();">
-                                        <div class="icon-circle" style="background: rgba(236, 72, 153, 0.12);">
-                                            <i data-lucide="palette" style="width: 20px; height: 20px; color: #ec4899;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'لوحة رسم' : 'Sketch'}</span>
-                                    </button>
-                                    <button type="button" class="attachment-item" onclick="app.startInChatDrawing('${chatId}'); app.closeAttachmentMenu();">
-                                        <div class="icon-circle" style="background: rgba(20, 184, 166, 0.12);">
-                                            <i data-lucide="pen-tool" style="width: 20px; height: 20px; color: #14b8a6;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'رسم الشات' : 'Draw'}</span>
-                                    </button>
-                                    ${chat.type === 'group' ? `
-                                    <button type="button" class="attachment-item" onclick="app.showPollModal('${chatId}'); app.closeAttachmentMenu();">
-                                        <div class="icon-circle" style="background: rgba(16, 185, 129, 0.12);">
-                                            <i data-lucide="bar-chart-2" style="width: 20px; height: 20px; color: #10b981;"></i>
-                                        </div>
-                                        <span>${this.lang === 'ar' ? 'استطلاع' : 'Poll'}</span>
-                                    </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                            <button type="button" id="voice-btn" style="background: none; border: none; color: var(--text-secondary); flex-shrink: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer;" onclick="app.startRecording()">
-                                <i data-lucide="mic" style="width: 20px;"></i>
                             </button>
                             ` : ''}
                         </form>

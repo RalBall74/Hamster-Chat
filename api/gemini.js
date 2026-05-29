@@ -5,7 +5,6 @@ export default async function handler(req, res) {
 
     const allowedOrigins = [
         'https://ralball74.github.io', // GitHub Pages base domain
-        'http://localhost:5500',        // Local server (Acode/Live Server)
         'http://127.0.0.1:5500'
     ];
 
