@@ -323,6 +323,7 @@ export function extendSettings(HamsterApp) {
         const container = document.getElementById('page-content');
         const showLastSeen = this.userData?.privacy?.showLastSeen !== false;
         const ghostMode = !!this.userData?.privacy?.ghostMode;
+        const hideFromSearch = !!this.userData?.privacy?.hideFromSearch;
         const appLockEnabled = !!this.userData?.appLockPin;
         container.innerHTML = `
             <div class="page-container" style="max-height: 100%; overflow-y: auto; padding-bottom: 40px;">
@@ -342,6 +343,10 @@ export function extendSettings(HamsterApp) {
                 <div class="privacy-item">
                     <div class="privacy-info"><h4>${this.lang === 'ar' ? 'وضع الشبح' : 'Ghost Mode'}</h4><p>${this.lang === 'ar' ? 'إخفاء علامة الصح الزرقاء' : 'Hide blue ticks'}</p></div>
                     <div class="toggle-switch ${ghostMode ? 'active' : ''}" onclick="app.togglePrivacy('ghostMode', true)"></div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'إخفاء من البحث' : 'Hide from Search'}</h4><p>${this.lang === 'ar' ? 'لن يجدك أحد إلا عبر QR أو الرابط' : 'Only discoverable via QR & Link'}</p></div>
+                    <div class="toggle-switch ${hideFromSearch ? 'active' : ''}" onclick="app.togglePrivacy('hideFromSearch', true)"></div>
                 </div>
                 <div class="form-group" style="margin-top: 24px;">
                     <label>${this.lang === 'ar' ? 'تأثير الصوت (للخصوصية)' : 'Voice Effect (Privacy)'}</label>

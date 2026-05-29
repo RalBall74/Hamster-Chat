@@ -699,7 +699,7 @@ class HamsterApp {
         );
 
         const snap = await getDocs(q);
-        const users = snap.docs.map(d => d.data()).filter(u => u.uid !== this.user.uid);
+        const users = snap.docs.map(d => d.data()).filter(u => u.uid !== this.user.uid && !u.privacy?.hideFromSearch);
 
         let globalHTML = '';
         if (users.length > 0) {
