@@ -163,6 +163,10 @@ export function extendUI(HamsterApp) {
         }, 250);
         
         this.activeStoryId = null;
+        if (this.storyTimeoutId) {
+            clearTimeout(this.storyTimeoutId);
+            this.storyTimeoutId = null;
+        }
         this.isScheduledModalOpen = false;
     };
 

@@ -22,8 +22,8 @@ export function extendStories(HamsterApp) {
             this.renderFilteredChats && this.renderFilteredChats();
             
             // Real-time update for open story
-            if (this.activeStoryId) {
-                this.viewStory(this.activeStoryId);
+            if (this.activeStoryId && this.currentStoryUser) {
+                this.viewUserStories(this.currentStoryUser, this.currentStoryIndex);
             }
         });
     };
@@ -78,7 +78,7 @@ export function extendStories(HamsterApp) {
         storiesHTML += `
             <div style="margin-bottom: 32px;">
                 <h3 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${this.lang === 'ar' ? 'قصتي' : 'Your Status'}</h3>
-                <div style="background: ${myStory ? 'linear-gradient(135deg, var(--accent), #9333ea)' : 'var(--glass-panel)'}; border-radius: 24px; padding: 24px; display: flex; align-items: center; gap: 20px; box-shadow: ${myStory ? '0 10px 20px rgba(109, 40, 217, 0.2)' : 'none'}; cursor: pointer; transition: transform 0.2s;" onclick="${myStory ? `app.viewStory('${myStory.id}')` : `document.getElementById('story-upload').click()`}">
+                <div style="background: ${myStory ? 'linear-gradient(135deg, var(--accent), #9333ea)' : 'var(--glass-panel)'}; border-radius: 24px; padding: 24px; display: flex; align-items: center; gap: 20px; box-shadow: ${myStory ? '0 10px 20px rgba(109, 40, 217, 0.2)' : 'none'}; cursor: pointer; transition: transform 0.2s;" onclick="${myStory ? `app.viewUserStories('${this.user.uid}')` : `document.getElementById('story-upload').click()`}">
                     <div style="position: relative;">
                         <img src="${this.userData.photoURL}" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid white;">
                         <div style="position: absolute; bottom: -2px; right: -2px; background: ${myStory ? '#10b981' : 'var(--accent)'}; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid white;">${myStory ? '✓' : '+'}</div>
@@ -108,12 +108,27 @@ export function extendStories(HamsterApp) {
             s.uid !== this.user.uid && contactUids.has(s.uid)
         );
 
-        if (otherStories.length > 0) {
+        // Group by uid
+        const groupedStories = {};
+        otherStories.forEach(s => {
+            if (!groupedStories[s.uid]) groupedStories[s.uid] = [];
+            groupedStories[s.uid].push(s);
+        });
+        
+        const uniqueUids = Object.keys(groupedStories);
+
+        if (uniqueUids.length > 0) {
             storiesHTML += `<h3 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${this.lang === 'ar' ? 'تحديثات الأصدقاء' : 'Recent Updates'}</h3>`;
             storiesHTML += `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">`;
-            otherStories.forEach(s => {
+            uniqueUids.forEach(uid => {
+                const userStories = groupedStories[uid];
+                // allStories is ordered desc, so userStories[0] is the newest
+                const s = userStories[0];
+                const unseenCount = userStories.filter(st => !st.viewers?.includes(this.user.uid)).length;
+                const ringStyle = unseenCount > 0 ? 'border: 3px solid var(--accent); padding: 2px;' : 'border: 2px solid rgba(255,255,255,0.2);';
+
                 storiesHTML += `
-                    <div class="glass-card" style="position: relative; height: 200px; border-radius: 20px; overflow: hidden; cursor: pointer; background: ${s.type === 'text' ? (s.bg || 'var(--accent)') : 'none'};" onclick="app.viewStory('${s.id}')">
+                    <div class="glass-card" style="position: relative; height: 200px; border-radius: 20px; overflow: hidden; cursor: pointer; background: ${s.type === 'text' ? (s.bg || 'var(--accent)') : 'none'};" onclick="app.viewUserStories('${uid}')">
                         ${s.type === 'text' ? `
                             <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; color: white; font-weight: 700; font-size: 14px;">
                                 ${s.text}
@@ -122,7 +137,7 @@ export function extendStories(HamsterApp) {
                             <img src="${s.image}" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8);" draggable="false" oncontextmenu="return false;">
                         `}
                         <div style="position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); padding: 1px; background: white;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; ${ringStyle} background: white;">
                                 <img src="${s.photo}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" draggable="false" oncontextmenu="return false;">
                             </div>
                         </div>
@@ -206,10 +221,78 @@ export function extendStories(HamsterApp) {
         }
     };
 
-    HamsterApp.prototype.viewStory = function(storyId) {
-        this.activeStoryId = storyId;
-        const story = this.allStories.find(s => s.id === storyId);
-        if (!story) return;
+    HamsterApp.prototype.viewUserStories = function(uid, startIndex = null) {
+        const contactUids = new Set();
+        (this.allChats || []).forEach(chat => {
+            (chat.memberIds || []).forEach(id => {
+                if (id !== this.user.uid) contactUids.add(id);
+            });
+        });
+
+        const groupedMap = new Map();
+        (this.allStories || []).forEach(s => {
+            if (s.uid === this.user.uid || contactUids.has(s.uid)) {
+                if (!groupedMap.has(s.uid)) groupedMap.set(s.uid, []);
+                groupedMap.get(s.uid).push(s);
+            }
+        });
+
+        this.storyGroups = Array.from(groupedMap.keys());
+        this.currentStoryUser = uid;
+        
+        // Reverse so chronological order (oldest first)
+        this.currentStoryGroup = (groupedMap.get(uid) || []).reverse(); 
+        
+        if (this.currentStoryGroup.length === 0) return;
+
+        if (startIndex !== null && startIndex >= 0 && startIndex < this.currentStoryGroup.length) {
+            this.currentStoryIndex = startIndex;
+        } else {
+            const unseenIndex = this.currentStoryGroup.findIndex(s => !s.viewers?.includes(this.user.uid));
+            this.currentStoryIndex = unseenIndex !== -1 ? unseenIndex : 0;
+        }
+
+        this.renderStoryViewer();
+    };
+
+    HamsterApp.prototype.nextStory = function() {
+        if (!this.currentStoryGroup) return;
+        if (this.currentStoryIndex < this.currentStoryGroup.length - 1) {
+            this.currentStoryIndex++;
+            this.renderStoryViewer();
+        } else {
+            const userIdx = this.storyGroups.indexOf(this.currentStoryUser);
+            if (userIdx !== -1 && userIdx < this.storyGroups.length - 1) {
+                this.viewUserStories(this.storyGroups[userIdx + 1], 0);
+            } else {
+                this.closeModal();
+            }
+        }
+    };
+
+    HamsterApp.prototype.prevStory = function() {
+        if (!this.currentStoryGroup) return;
+        if (this.currentStoryIndex > 0) {
+            this.currentStoryIndex--;
+            this.renderStoryViewer();
+        } else {
+            const userIdx = this.storyGroups.indexOf(this.currentStoryUser);
+            if (userIdx > 0) {
+                const prevUid = this.storyGroups[userIdx - 1];
+                const prevGroup = (this.allStories || []).filter(s => s.uid === prevUid);
+                this.viewUserStories(prevUid, prevGroup.length > 0 ? prevGroup.length - 1 : 0);
+            } else {
+                // If first user and first story, do nothing or close. Let's close.
+                this.closeModal();
+            }
+        }
+    };
+
+    HamsterApp.prototype.renderStoryViewer = function() {
+        if (!this.currentStoryGroup || !this.currentStoryGroup[this.currentStoryIndex]) return;
+        
+        const story = this.currentStoryGroup[this.currentStoryIndex];
+        this.activeStoryId = story.id;
 
         const isMine = story.uid === this.user.uid;
         const timeStr = story.createdAt ? this.formatLastSeen(story.createdAt.seconds * 1000) : '';
@@ -243,26 +326,41 @@ export function extendStories(HamsterApp) {
             </div>
         ` : '';
 
+        let progressBarsHTML = `<div style="position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 105; direction: ltr;">`;
+        for (let i = 0; i < this.currentStoryGroup.length; i++) {
+            progressBarsHTML += `
+                <div style="flex: 1; height: 3px; background: rgba(255,255,255,0.4); border-radius: 2px; overflow: hidden;">
+                    <div id="story-progress-bar-${i}" style="width: ${i < this.currentStoryIndex ? '100%' : '0%'}; height: 100%; background: white; transition: ${i === this.currentStoryIndex ? 'width 5s linear' : 'none'};"></div>
+                </div>
+            `;
+        }
+        progressBarsHTML += `</div>`;
+
         this.showModal(`
-            <div style="position: relative; width: 100%; height: 100%; background: #000; overflow: hidden; display: flex; flex-direction: column;">
+            <div id="story-viewer-container" style="position: relative; width: 100%; height: 100%; background: #000; overflow: hidden; display: flex; flex-direction: column; touch-action: pan-y;">
+                ${progressBarsHTML}
                 <!-- Header -->
-                <div style="position: absolute; top: 0; left: 0; right: 0; padding: 20px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; align-items: center; gap: 12px; z-index: 100;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; padding: 24px 16px 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; align-items: center; gap: 12px; z-index: 100;">
                     <button onclick="app.closeModal()" style="background: transparent; border: none; color: white; cursor: pointer; display: flex; align-items: center; padding: 4px;"><i data-lucide="chevron-left" style="width: 28px; height: 28px;"></i></button>
                     <div style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); overflow: hidden; flex-shrink: 0;">
                         <img src="${story.uid === this.user.uid ? this.userData.photoURL : story.photo}" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
-                    <div style="flex: 1; overflow: hidden;">
+                    <div style="flex: 1; overflow: hidden; pointer-events: none;">
                         <div style="color: white; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${story.uid === this.user.uid ? this.userData.displayName : story.name}</div>
                         <div style="color: rgba(255,255,255,0.6); font-size: 12px;">${timeStr}</div>
                     </div>
                      ${isMine ? `
-                        <button onclick="app.deleteStory('${story.id}')" style="background: transparent; border: none; color: white; opacity: 0.8; cursor: pointer; padding: 8px;"><i data-lucide="trash-2" style="width: 20px;"></i></button>
+                        <button onclick="app.deleteStory('${story.id}')" style="background: transparent; border: none; color: white; opacity: 0.8; cursor: pointer; padding: 8px; z-index: 110;"><i data-lucide="trash-2" style="width: 20px;"></i></button>
                     ` : ''}
                 </div>
 
                 <!-- Content Area -->
                 <div style="flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; height: 100%;">
                     ${contentHTML}
+                    
+                    <!-- Navigation Overlays -->
+                    <div onclick="app.${this.lang === 'ar' ? 'nextStory' : 'prevStory'}()" style="position: absolute; top: 15%; left: 0; width: 35%; height: 70%; z-index: 50; cursor: pointer;"></div>
+                    <div onclick="app.${this.lang === 'ar' ? 'prevStory' : 'nextStory'}()" style="position: absolute; top: 15%; right: 0; width: 35%; height: 70%; z-index: 50; cursor: pointer;"></div>
                 </div>
 
                 <!-- Footer / Reply -->
@@ -309,9 +407,48 @@ export function extendStories(HamsterApp) {
         `, true);
         lucide.createIcons({ node: document.getElementById('modal-content') });
 
+        // Setup swipe navigation
+        const viewerContainer = document.getElementById('story-viewer-container');
+        if (viewerContainer) {
+            let startX = 0;
+            let endX = 0;
+            viewerContainer.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+            }, { passive: true });
+            
+            viewerContainer.addEventListener('touchend', (e) => {
+                endX = e.changedTouches[0].clientX;
+                const diffX = startX - endX;
+                // Threshold for swipe
+                if (Math.abs(diffX) > 50) {
+                    if (diffX > 0) {
+                        // Swiped left
+                        if (this.lang === 'ar') this.prevStory(); else this.nextStory();
+                    } else {
+                        // Swiped right
+                        if (this.lang === 'ar') this.nextStory(); else this.prevStory();
+                    }
+                }
+            }, { passive: true });
+        }
+
         if (!isMine) {
             this.markStoryViewed(story.id);
         }
+
+        // Auto-advance logic and animation
+        if (this.storyTimeoutId) clearTimeout(this.storyTimeoutId);
+        
+        setTimeout(() => {
+            const activeBar = document.getElementById(`story-progress-bar-${this.currentStoryIndex}`);
+            if (activeBar) {
+                activeBar.style.width = '100%';
+            }
+        }, 50);
+
+        this.storyTimeoutId = setTimeout(() => {
+            this.nextStory();
+        }, 5000);
     };
 
     HamsterApp.prototype.markStoryViewed = async function(storyId) {
