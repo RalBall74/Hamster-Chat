@@ -2380,6 +2380,29 @@ body::before {
         border-top: none;
     }
 
+    .input-container {
+        padding: 5px 6px 5px 16px;
+        gap: 6px;
+        border-radius: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    [dir="rtl"] .input-container {
+        padding: 5px 16px 5px 6px;
+    }
+
+    .send-btn {
+        width: 42px;
+        height: 42px;
+    }
+
+    /* RTL: attachment menu opens to the right */
+    [dir="rtl"] #attachment-menu {
+        left: auto !important;
+        right: 0 !important;
+        transform-origin: bottom right !important;
+    }
+
     .page-container {
         margin: 0 !important;
         padding: 24px 16px 120px !important;
