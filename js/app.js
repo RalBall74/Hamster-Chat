@@ -4648,10 +4648,71 @@ class HamsterApp {
             </div>
         `;
 
-        toast.onclick = () => {
-            this.handleNavigation('chats');
-            this.selectChat(chat.id);
-            toast.classList.remove('show');
+        // Reset styles for animation
+        toast.style.transform = '';
+        toast.style.opacity = '1';
+        toast.style.transition = 'top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s ease, opacity 0.3s ease';
+
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+
+        const handleDragStart = (e) => {
+            isDragging = true;
+            startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            currentX = startX;
+            toast.style.transition = 'none'; // Disable transition during drag for 1:1 follow
+        };
+
+        const handleDragMove = (e) => {
+            if (!isDragging) return;
+            currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const deltaX = currentX - startX;
+            
+            // Only allow swiping to the right
+            if (deltaX > 0) {
+                toast.style.transform = `translateX(calc(-50% + ${deltaX}px))`;
+                toast.style.opacity = Math.max(0, 1 - (deltaX / window.innerWidth) * 1.5);
+                e.preventDefault(); // Prevent page scrolling while swiping
+            }
+        };
+
+        const handleDragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            const deltaX = currentX - startX;
+            toast.style.transition = 'top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s ease-out, opacity 0.3s ease-out';
+            
+            if (deltaX > 80) { // Threshold to dismiss
+                toast.style.transform = `translateX(150vw)`;
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.style.transform = '';
+                    toast.style.opacity = '1';
+                }, 300);
+            } else {
+                // Snap back
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.opacity = '1';
+            }
+        };
+
+        // Attach touch and mouse events for swiping
+        toast.onmousedown = handleDragStart;
+        toast.ontouchstart = handleDragStart;
+        window.onmousemove = handleDragMove;
+        window.ontouchmove = handleDragMove;
+        window.onmouseup = handleDragEnd;
+        window.ontouchend = handleDragEnd;
+
+        // Make sure clicking still works if not swiped
+        toast.onclick = (e) => {
+            if (Math.abs(currentX - startX) < 10) { // If it was just a tap and not a drag
+                this.handleNavigation('chats');
+                this.selectChat(chat.id);
+                toast.classList.remove('show');
+            }
         };
 
         toast.classList.remove('show');
