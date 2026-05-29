@@ -531,21 +531,31 @@ class HamsterApp {
             }
 
             // Process In-App Notifications
-            if (this._firstChatLoadDone) {
-                docs.forEach(chat => {
+            docs.forEach(chat => {
+                const msgKey = chat.lastMessage ? (chat.lastMessage.createdAt?.toMillis ? chat.lastMessage.createdAt.toMillis().toString() : chat.lastMessage.text || '') : '';
+                
+                if (this._firstChatLoadDone) {
                     if (modifiedChatIds.includes(chat.id) && chat.id !== this.activeChatId && chat.lastMessage && chat.lastMessage.senderId && chat.lastMessage.senderId !== this.user.uid) {
-                        const msgTimestamp = chat.lastMessage.createdAt?.toMillis ? chat.lastMessage.createdAt.toMillis() : Date.now();
-                        const lastNotified = this._notifiedMessages?.[chat.id] || 0;
+                        const lastNotifiedKey = this._notifiedMessages?.[chat.id] || '';
                         
-                        // Prevent duplicate notifications and ignore old messages (30 sec window)
-                        if (msgTimestamp > lastNotified && (Date.now() - msgTimestamp) < 30000) {
+                        // Prevent duplicate notifications and ignore typing updates
+                        if (msgKey && msgKey !== lastNotifiedKey) {
                             if (!this._notifiedMessages) this._notifiedMessages = {};
-                            this._notifiedMessages[chat.id] = msgTimestamp;
-                            this.showInAppNotification(chat);
+                            this._notifiedMessages[chat.id] = msgKey;
+                            
+                            // Don't show if the message is extremely old (if timestamp is available)
+                            const msgTimestamp = chat.lastMessage.createdAt?.toMillis ? chat.lastMessage.createdAt.toMillis() : Date.now();
+                            if ((Date.now() - msgTimestamp) < 30000) {
+                                this.showInAppNotification(chat);
+                            }
                         }
                     }
-                });
-            }
+                } else if (msgKey) {
+                    // Populate initial state to prevent notifying for existing messages
+                    if (!this._notifiedMessages) this._notifiedMessages = {};
+                    this._notifiedMessages[chat.id] = msgKey;
+                }
+            });
             this._firstChatLoadDone = true;
 
             // Calculate total unread chats count
