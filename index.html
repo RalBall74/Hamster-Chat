@@ -133,16 +133,16 @@
                     <div class="auth-logo">
                         <img src="assets/logo.jpg" alt="Hamster Logo">
                     </div>
-                    <h1>Welcome Back</h1>
-                    <p>Rejoin the most beautiful and secure messaging experience.</p>
+                    <h1 id="auth-welcome-title">Welcome Back</h1>
+                    <p id="auth-welcome-sub">Rejoin the most beautiful and secure messaging experience.</p>
                     <button class="auth-google-btn" onclick="app.login()">
                         <img src="assets/Google.png" alt="Google">
-                        Sign in with Google
+                        <span id="auth-google-btn-text">Sign in with Google</span>
                     </button>
-                    <span class="auth-footnote">Privacy is our priority. No trackers.</span>
+                    <span class="auth-footnote" id="auth-footnote">Privacy is our priority. No trackers.</span>
                     <button class="auth-mobile-toggle"
                         onclick="document.getElementById('auth-container').classList.add('active')">
-                        New to Hamster? <span>Learn More</span>
+                        <span id="auth-new-toggle">New to Hamster? <span>Learn More</span></span>
                     </button>
                 </div>
             </div>
@@ -155,11 +155,11 @@
                         <i data-lucide="zap"></i>
                         <i data-lucide="layout"></i>
                     </div>
-                    <h1>Hamster Gives You</h1>
-                    <p>End-to-end encrypted messaging with hardware-accelerated glassmorphism patterns.</p>
+                    <h1 id="auth-benefits-title">Hamster Gives You</h1>
+                    <p id="auth-benefits-sub">End-to-end encrypted messaging with hardware-accelerated glassmorphism patterns.</p>
                     <button class="auth-mobile-toggle"
                         onclick="document.getElementById('auth-container').classList.remove('active')">
-                        Ready to sign in? <span>Go Back</span>
+                        <span id="auth-back-toggle">Ready to sign in? <span>Go Back</span></span>
                     </button>
                 </div>
             </div>
@@ -168,23 +168,54 @@
             <div class="auth-toggle-container">
                 <div class="auth-toggle">
                     <div class="auth-toggle-panel auth-toggle-left">
-                        <h1>New to Hamster?</h1>
-                        <p>Discover a minimal paradigm designed for <b>your privacy</b>.</p>
+                        <h1 id="auth-toggle-left-title">New to Hamster?</h1>
+                        <p id="auth-toggle-left-sub">Discover a minimal paradigm designed for <b>your privacy</b>.</p>
                         <button class="auth-sec-btn"
-                            onclick="document.getElementById('auth-container').classList.remove('active')">Back to
+                            onclick="document.getElementById('auth-container').classList.remove('active')" id="auth-toggle-left-btn">Back to
                             Login</button>
                     </div>
                     <div class="auth-toggle-panel auth-toggle-right">
-                        <h1>Secure. Pure.</h1>
-                        <p>Fast. Secure. Simple. Privacy Experience.<br>You. Your people. Your thoughts. Nothing else.</p>
+                        <h1 id="auth-toggle-right-title">Secure. Pure.</h1>
+                        <p id="auth-toggle-right-sub">Fast. Secure. Simple. Privacy Experience.<br>You. Your people. Your thoughts. Nothing else.</p>
                         <button class="auth-sec-btn"
-                            onclick="document.getElementById('auth-container').classList.add('active')">Learn
+                            onclick="document.getElementById('auth-container').classList.add('active')" id="auth-toggle-right-btn">Learn
                             More</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Auth Localization Script (runs before app.js) -->
+    <script>
+        (function() {
+            const saved = localStorage.getItem('hamster-lang');
+            const deviceLang = navigator.language || navigator.userLanguage || 'en';
+            const lang = saved ? saved : (deviceLang.startsWith('ar') ? 'ar' : 'en');
+
+            if (lang === 'ar') {
+                document.documentElement.dir = 'rtl';
+                document.documentElement.lang = 'ar';
+
+                const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+
+                set('auth-welcome-title', 'أهلاً بعودتك');
+                set('auth-welcome-sub', 'عُد إلى أجمل وأأمن تجربة تراسل على الإطلاق.');
+                set('auth-google-btn-text', 'تسجيل الدخول بـ Google');
+                set('auth-footnote', 'خصوصيتك أولويتنا. بلا متتبّعين.');
+                set('auth-new-toggle', 'جديد على هامستر؟ <span>اعرف المزيد</span>');
+                set('auth-benefits-title', 'هامستر يمنحك');
+                set('auth-benefits-sub', 'تشفير كامل من الطرف إلى الطرف مع تصميم زجاجي متسارع بالأجهزة.');
+                set('auth-back-toggle', 'جاهز لتسجيل الدخول؟ <span>عُد للخلف</span>');
+                set('auth-toggle-left-title', 'جديد على هامستر؟');
+                set('auth-toggle-left-sub', 'اكتشف تصميماً بسيطاً مصنوعاً من أجل <b>خصوصيتك</b>.');
+                set('auth-toggle-left-btn', 'العودة لتسجيل الدخول');
+                set('auth-toggle-right-title', 'آمن. نقي.');
+                set('auth-toggle-right-sub', 'سريع. آمن. بسيط. تجربة خصوصية حقيقية.<br>أنت. أحبّاؤك. أفكارك. لا شيء غير ذلك.');
+                set('auth-toggle-right-btn', 'اعرف المزيد');
+            }
+        })();
+    </script>
 
     <!-- App Lock Overlay -->
     <div id="app-lock-overlay" class="hidden">

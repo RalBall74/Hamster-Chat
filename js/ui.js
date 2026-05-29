@@ -11,7 +11,14 @@ export function extendUI(HamsterApp) {
     };
 
     HamsterApp.prototype.loadLang = function() {
-        this.lang = localStorage.getItem('hamster-lang') || 'en';
+        const saved = localStorage.getItem('hamster-lang');
+        if (saved) {
+            this.lang = saved;
+        } else {
+            // First launch: detect device language
+            const deviceLang = navigator.language || navigator.userLanguage || 'en';
+            this.lang = deviceLang.startsWith('ar') ? 'ar' : 'en';
+        }
         document.documentElement.dir = this.lang === 'ar' ? 'rtl' : 'ltr';
         document.documentElement.lang = this.lang;
         this.updateStaticUI();
