@@ -3342,10 +3342,15 @@ body::before {
     margin-top: 10px;
     margin-bottom: 4px;
     background: transparent;
-    padding: 0;
+    padding: 4px 0;
     border: none;
-    direction: ltr; /* Always align and lay out from left to right */
     justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+.sidebar-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .sidebar-tab {
