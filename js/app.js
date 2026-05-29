@@ -661,7 +661,7 @@ class HamsterApp {
             }
             const hasStory = partnerStoryIds.length > 0;
             const storyAvatarStyle = hasStory ? 'border: 2px solid var(--accent); padding: 2px; cursor: pointer;' : '';
-            const storyAvatarClick = hasStory ? `onclick="app.viewStory('${partnerStoryIds[0]}'); event.stopPropagation();"` : '';
+            const storyAvatarClick = hasStory ? `onclick="app.viewUserStories('${partnerId}'); event.stopPropagation();"` : '';
 
             return `
                 <div class="chat-card ${active}" onclick="app.selectChat('${chat.id}')">

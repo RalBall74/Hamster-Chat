@@ -3471,7 +3471,6 @@ body::before {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
 }
 
 /* Responsive Tab Adjustments for Mobile Screens */
