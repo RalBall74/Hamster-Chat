@@ -445,13 +445,15 @@ export function extendSettings(HamsterApp) {
         reader.readAsDataURL(file);
     };
 
-    HamsterApp.prototype.togglePrivacy = async function(key, fromPrivacyPage = false) {
+    HamsterApp.prototype.togglePrivacy = function(key, fromPrivacyPage = false) {
         const newState = !this.userData?.privacy?.[key];
-        const updateObj = {};
-        updateObj[`privacy.${key}`] = newState;
-        await updateDoc(doc(db, 'users', this.user.uid), updateObj);
+        // Optimistic update: apply locally & re-render instantly
         this.userData.privacy = { ...(this.userData.privacy || {}), [key]: newState };
         if (fromPrivacyPage === true) this.renderPrivacySettingsPage(); else this.renderSettingsPage();
+        // Save to Firestore in the background
+        const updateObj = {};
+        updateObj[`privacy.${key}`] = newState;
+        updateDoc(doc(db, 'users', this.user.uid), updateObj).catch(e => console.error('Privacy update failed', e));
     };
 
     HamsterApp.prototype.setVoiceEffect = async function(effect) {
