@@ -35,6 +35,13 @@ export function extendSettings(HamsterApp) {
                 </div>
                 <button class="glass-btn" style="width: 100%; border-radius: 12px; padding: 14px; font-size: 15px; margin-top: 8px;" onclick="app.saveProfile()">${this.t('sync_profile')}</button>
                 <div style="margin-top: 24px;">
+                    <button class="btn-ghost" style="width: 100%; justify-content: space-between; padding: 16px; border-radius: 12px; display: flex; align-items: center; border: 1px solid var(--glass-border); margin-bottom: 12px;" onclick="app.showInviteQR()">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i data-lucide="qr-code" style="width: 20px; color: var(--accent);"></i>
+                            <span style="font-weight: 500;">${this.lang === 'ar' ? 'دعوة عبر QR والرابط' : 'Invite via QR & Link'}</span>
+                        </div>
+                        <i data-lucide="chevron-right" style="width: 18px; opacity: 0.5;"></i>
+                    </button>
                     <button class="btn-ghost" style="width: 100%; justify-content: space-between; padding: 16px; border-radius: 12px; display: flex; align-items: center; border: 1px solid var(--glass-border);" onclick="app.renderAboutPage()">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <i data-lucide="info" style="width: 20px;"></i>
@@ -447,5 +454,41 @@ export function extendSettings(HamsterApp) {
         if (!this.userData.settings) this.userData.settings = {};
         this.userData.settings.voiceEffect = effect;
         await updateDoc(doc(db, 'users', this.user.uid), { 'settings.voiceEffect': effect });
+    };
+
+    HamsterApp.prototype.showInviteQR = function() {
+        // Strip existing parameters to form a clean base URL
+        const baseUrl = window.location.origin + window.location.pathname;
+        const link = baseUrl + '?chat=' + this.user.uid;
+        
+        // Use an external API for fast QR generation with margin
+        const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link) + '&margin=10';
+        
+        const title = this.lang === 'ar' ? 'رمزك الخاص والمباشر' : 'Your Personal QR Code';
+        const msg = this.lang === 'ar' ? 'شارك الرابط أو دع أصدقاءك يمسحون الرمز لبدء محادثة معك مباشرة بدون البحث عن حسابك.' : 'Share this link or let friends scan the code to start chatting with you instantly without searching.';
+        
+        const isRTL = this.lang === 'ar';
+        const html = `
+            <div style="text-align: center; direction: ${isRTL ? 'rtl' : 'ltr'}; padding: 10px;">
+                <h3 style="margin: 0 0 10px; font-size: 22px; font-weight: 800; color: var(--text-primary);">${title}</h3>
+                <p style="margin: 0 0 24px; font-size: 14px; color: var(--text-secondary); line-height: 1.5;">${msg}</p>
+                
+                <div style="background: white; padding: 16px; border-radius: 24px; display: inline-block; margin-bottom: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.3);">
+                    <img src="${qrUrl}" style="width: 180px; height: 180px; display: block; border-radius: 8px; object-fit: contain;">
+                </div>
+                
+                <div style="display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,0.04); padding: 12px; border-radius: 16px; border: 1px solid var(--glass-border);">
+                    <input type="text" value="${link}" readonly style="flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 12.5px; outline: none; width: 100%;">
+                    <button onclick="navigator.clipboard.writeText('${link}'); app.showAlert('${isRTL ? 'تم' : 'Done'}', '${isRTL ? 'تم نسخ الرابط بنجاح!' : 'Link copied successfully!'}');" style="background: var(--accent); color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+                        ${isRTL ? 'نسخ' : 'Copy'}
+                    </button>
+                </div>
+                
+                <button onclick="app.closeModal()" style="margin-top: 24px; width: 100%; padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-primary); font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    ${isRTL ? 'إغلاق' : 'Close'}
+                </button>
+            </div>
+        `;
+        this.showModal(html);
     };
 }

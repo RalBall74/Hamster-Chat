@@ -556,6 +556,21 @@ class HamsterApp {
                     this._notifiedMessages[chat.id] = msgKey;
                 }
             });
+
+            // Check for invite link on first load
+            if (!this._firstChatLoadDone) {
+                const params = new URLSearchParams(window.location.search);
+                const inviteUid = params.get('chat');
+                if (inviteUid && inviteUid !== this.user.uid) {
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    // Start chat after a tiny delay to ensure UI is ready
+                    setTimeout(() => {
+                        this.startPrivateChat(inviteUid);
+                    }, 600);
+                }
+            }
+
             this._firstChatLoadDone = true;
 
             // Calculate total unread chats count
