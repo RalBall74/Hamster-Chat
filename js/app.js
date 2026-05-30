@@ -1150,6 +1150,9 @@ class HamsterApp {
         // Sanitize HTML slightly but allow some formatting
         text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+        // New lines to <br> (Do this BEFORE injecting HTML so we don't break injected tags)
+        text = text.replace(/\n/g, '<br>');
+
         // Dynamic link color to ensure excellent contrast on both sender and recipient bubbles
         const isMine = msg.senderId === this.user?.uid;
         const linkColor = isMine ? '#ffffff' : 'var(--accent)';
@@ -1183,9 +1186,6 @@ class HamsterApp {
         text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
         text = text.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px; font-family:monospace;">$1</code>');
-
-        // New lines to <br>
-        text = text.replace(/\n/g, '<br>');
 
         return text;
     }
