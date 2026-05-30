@@ -1,5 +1,5 @@
 import {
-    db, doc, setDoc, serverTimestamp, updateDoc, collection
+    db, doc, setDoc, getDoc, serverTimestamp, updateDoc, collection
 } from './firebase-config.js';
 
 export function extendAI(HamsterApp) {
@@ -7,54 +7,89 @@ export function extendAI(HamsterApp) {
         if (!text) return;
 
         const now = Date.now();
+        const uid = this.user?.uid;
+        if (!uid) return;
+
+        // ── All limits stored server-side in Firestore (tamper-proof) ──
+        const limitsRef = doc(db, 'users', uid, 'aiLimits', 'usage');
+
+        let limitsSnap;
+        try {
+            limitsSnap = await getDoc(limitsRef);
+        } catch (e) {
+            console.error('Failed to read AI limits:', e);
+            // Fail open — still allow the message so the user isn't blocked on Firestore errors
+        }
+
+        const limitsData = limitsSnap?.data() || {};
 
         // ── Rate limit 1: 5 messages per 5 minutes (general) ──
-        let aiUsage = JSON.parse(localStorage.getItem('hamster_ai_usage') || '{"count": 0, "firstMsgTime": 0}');
-        if (now - aiUsage.firstMsgTime > 5 * 60 * 1000) {
-            aiUsage = { count: 0, firstMsgTime: now };
+        const WINDOW_MS = 5 * 60 * 1000;
+        const msgWindowStart = limitsData.msgWindowStart || 0;
+        let msgCount = limitsData.msgCount || 0;
+
+        if (now - msgWindowStart > WINDOW_MS) {
+            // Window expired — reset
+            msgCount = 0;
         }
-        if (aiUsage.count >= 5) {
+
+        if (msgCount >= 5) {
+            const remainingSec = Math.ceil((WINDOW_MS - (now - msgWindowStart)) / 1000);
             this.showAlert(
                 this.lang === 'ar' ? 'الرجاء الانتظار' : 'Please wait',
-                this.lang === 'ar' ? 'لقد وصلت للحد المسموح (5 رسائل كل 5 دقائق). يرجى الانتظار لتوفير الموارد.' : 'You have reached the limit (5 messages per 5 minutes). Please wait to save resources.'
+                this.lang === 'ar'
+                    ? `لقد وصلت للحد المسموح (5 رسائل كل 5 دقائق). انتظر ${remainingSec} ثانية.`
+                    : `You have reached the limit (5 messages per 5 min). Wait ${remainingSec}s.`
             );
             return;
         }
 
         // ── Rate limit 2: 5 image requests per day ──
-        const isImageRequest = /(صورة|ارسم|رسم|رسملي|صوّر|generate.*image|draw|create.*image|image of|picture of)/i.test(text);
+        const isImageRequest = /(صورة|ارسم|رسم|رسملي|صوّر|صور|generate.*image|draw|create.*image|image of|picture of)/i.test(text);
+        const todayUTC = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD" — UTC, can't be spoofed client-side via TZ tricks
+        let imgCount = limitsData.imgCount || 0;
+        const imgDate = limitsData.imgDate || '';
+
         if (isImageRequest) {
-            const todayStr = new Date().toDateString();
-            let imgUsage = JSON.parse(localStorage.getItem('hamster_ai_image_usage') || '{"count": 0, "date": ""}');
-            if (imgUsage.date !== todayStr) {
-                imgUsage = { count: 0, date: todayStr };
-            }
-            if (imgUsage.count >= 5) {
+            const effectiveImgCount = (imgDate === todayUTC) ? imgCount : 0;
+            if (effectiveImgCount >= 5) {
                 this.showAlert(
                     this.lang === 'ar' ? 'تجاوزت الحد اليومي' : 'Daily Limit Reached',
-                    this.lang === 'ar' ? 'لقد استخدمت 5 صور اليوم. يمكنك طلب المزيد غداً 🐹' : 'You have used your 5 daily image generations. Come back tomorrow! 🐹'
+                    this.lang === 'ar'
+                        ? 'لقد استخدمت 5 صور اليوم. يمكنك طلب المزيد غداً 🐹'
+                        : 'You have used your 5 daily image generations. Come back tomorrow! 🐹'
                 );
                 return;
             }
-            imgUsage.count++;
-            localStorage.setItem('hamster_ai_image_usage', JSON.stringify(imgUsage));
         }
 
+        // ── Commit limit increments to Firestore atomically ──
+        const newMsgWindowStart = (now - msgWindowStart > WINDOW_MS) ? now : msgWindowStart;
+        const updatePayload = {
+            msgCount: msgCount + 1,
+            msgWindowStart: newMsgWindowStart,
+        };
+        if (isImageRequest) {
+            updatePayload.imgCount = (imgDate === todayUTC) ? imgCount + 1 : 1;
+            updatePayload.imgDate = todayUTC;
+        }
+
+        // Save limits — don't await so we don't block the UX
+        setDoc(limitsRef, updatePayload, { merge: true }).catch(e => console.warn('Limit write failed:', e));
+
+        // ── Proceed with message ──
         const input = document.getElementById('msg-input');
         if (input) input.value = '';
-        
-        aiUsage.count++;
-        localStorage.setItem('hamster_ai_usage', JSON.stringify(aiUsage));
         document.getElementById('mention-dropdown')?.remove();
 
         const chatRef = doc(db, 'chats', chatId);
-        
+
         // 1. Save User Message
         const msgRef = doc(collection(db, `chats/${chatId}/messages`));
         await setDoc(msgRef, {
             chatId,
             text,
-            senderId: this.user.uid,
+            senderId: uid,
             createdAt: serverTimestamp(),
             status: 'read'
         });
@@ -64,14 +99,14 @@ export function extendAI(HamsterApp) {
 
         // 3. Show AI Typing State
         await setDoc(chatRef, {
-            memberIds: [this.user.uid, 'hamster_ai_bot'],
+            memberIds: [uid, 'hamster_ai_bot'],
             typing: { 'hamster_ai_bot': true }
         }, { merge: true });
 
         try {
             const aiReply = await this.fetchGeminiReply(text);
             const aiMsgRef = doc(collection(db, `chats/${chatId}/messages`));
-            
+
             // 4. Setup initial doc with placeholder
             await setDoc(aiMsgRef, {
                 chatId, text: '...', senderId: 'hamster_ai_bot', createdAt: serverTimestamp(), status: 'read'
@@ -80,15 +115,13 @@ export function extendAI(HamsterApp) {
             // 5. Stream words to Firestore for a real premium typing effect
             const words = aiReply.split(' ');
             let currentText = '';
-            const chunkSize = words.length > 50 ? 3 : 1; // Faster for long texts
+            const chunkSize = words.length > 50 ? 3 : 1;
 
             for (let i = 0; i < words.length; i++) {
                 currentText += (i === 0 ? '' : ' ') + words[i];
-                
-                // Update every chunk of words
                 if (i % chunkSize === 0 || i === words.length - 1) {
                     await updateDoc(aiMsgRef, { text: currentText });
-                    await new Promise(r => setTimeout(r, 80)); // 80ms delay per chunk
+                    await new Promise(r => setTimeout(r, 80));
                 }
             }
 
