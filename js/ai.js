@@ -5,21 +5,39 @@ import {
 export function extendAI(HamsterApp) {
     HamsterApp.prototype.handleAIMessage = async function(chatId, text) {
         if (!text) return;
-        
-        // Rate limit check (5 messages per 5 minutes)
-        const now = Date.now();
-        let aiUsage = JSON.parse(localStorage.getItem('hamster_ai_usage') || '{"count": 0, "firstMsgTime": 0}');
 
+        const now = Date.now();
+
+        // ── Rate limit 1: 5 messages per 5 minutes (general) ──
+        let aiUsage = JSON.parse(localStorage.getItem('hamster_ai_usage') || '{"count": 0, "firstMsgTime": 0}');
         if (now - aiUsage.firstMsgTime > 5 * 60 * 1000) {
             aiUsage = { count: 0, firstMsgTime: now };
         }
-
         if (aiUsage.count >= 5) {
             this.showAlert(
                 this.lang === 'ar' ? 'الرجاء الانتظار' : 'Please wait',
                 this.lang === 'ar' ? 'لقد وصلت للحد المسموح (5 رسائل كل 5 دقائق). يرجى الانتظار لتوفير الموارد.' : 'You have reached the limit (5 messages per 5 minutes). Please wait to save resources.'
             );
             return;
+        }
+
+        // ── Rate limit 2: 5 image requests per day ──
+        const isImageRequest = /(صورة|ارسم|رسم|رسملي|صوّر|generate.*image|draw|create.*image|image of|picture of)/i.test(text);
+        if (isImageRequest) {
+            const todayStr = new Date().toDateString();
+            let imgUsage = JSON.parse(localStorage.getItem('hamster_ai_image_usage') || '{"count": 0, "date": ""}');
+            if (imgUsage.date !== todayStr) {
+                imgUsage = { count: 0, date: todayStr };
+            }
+            if (imgUsage.count >= 5) {
+                this.showAlert(
+                    this.lang === 'ar' ? 'تجاوزت الحد اليومي' : 'Daily Limit Reached',
+                    this.lang === 'ar' ? 'لقد استخدمت 5 صور اليوم. يمكنك طلب المزيد غداً 🐹' : 'You have used your 5 daily image generations. Come back tomorrow! 🐹'
+                );
+                return;
+            }
+            imgUsage.count++;
+            localStorage.setItem('hamster_ai_image_usage', JSON.stringify(imgUsage));
         }
 
         const input = document.getElementById('msg-input');

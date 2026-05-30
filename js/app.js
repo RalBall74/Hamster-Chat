@@ -1602,6 +1602,9 @@ class HamsterApp {
         }
         this._typingBubbleVisible = false;
 
+        // Don't show typing bubble in Hamster AI chat
+        if (chatId === this.user?.uid + '_ai') return;
+
         this._typingBubbleUnsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
             if (this.activeChatId !== chatId) return;
             const data = snap.data();
