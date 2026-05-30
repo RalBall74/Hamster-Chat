@@ -1156,9 +1156,25 @@ class HamsterApp {
 
         // Linkify URLs or render Pollinations images
         const urlRegex = /(https?:\/\/[^\s<]+)/g;
-        text = text.replace(urlRegex, function(url) {
+        text = text.replace(urlRegex, (url) => {
             if (url.includes('image.pollinations.ai/prompt/')) {
-                return `<div style="margin-top: 8px;"><img src="${url}" style="max-width: 100%; border-radius: 12px; display: block; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.1);" onclick="app.viewImage('${url}', false); event.stopPropagation();"></div>`;
+                const uniqueId = 'ai-img-' + Math.random().toString(36).substr(2, 9);
+                return `
+                <div style="margin-top: 12px; position: relative; max-width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: var(--glass-panel); min-height: 200px; display: flex; align-items: center; justify-content: center;" id="container-${uniqueId}">
+                    <!-- Loading Animation -->
+                    <div id="loader-${uniqueId}" style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--accent);">
+                        <svg class="spin" style="width: 28px; height: 28px;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <span style="font-size: 13px; font-weight: 600; opacity: 0.9;">${app.lang === 'ar' ? 'جاري رسم الصورة...' : 'Painting...'}</span>
+                    </div>
+                    <!-- Image -->
+                    <img src="${url}" style="max-width: 100%; display: none; cursor: pointer;" 
+                        onload="document.getElementById('loader-${uniqueId}').style.display='none'; this.style.display='block'; document.getElementById('download-${uniqueId}').style.display='flex';" 
+                        onclick="app.viewImage('${url}', false); event.stopPropagation();">
+                    <!-- Download Button -->
+                    <a href="${url}" download="HamsterAI-Art.jpg" target="_blank" id="download-${uniqueId}" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.5); color: white; padding: 8px; border-radius: 50%; backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(0,0,0,0.5)'; this.style.transform='scale(1)';">
+                        <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x1="12" y1="15" y2="3"/></svg>
+                    </a>
+                </div>`;
             }
             return `<a href="${url}" target="_blank" style="color: ${linkColor}; text-decoration: underline; font-weight: 600;">${url}</a>`;
         });
@@ -2822,13 +2838,16 @@ class HamsterApp {
         const msg = this.currentMessages[msgId];
         if (!msg) return;
         const isMine = msg.senderId === this.user.uid;
+        const isAI = msg.senderId === this.user.uid + '_ai';
         const canEdit = isMine && !msg.image && !msg.audio;
 
         let buttonsHTML = '';
-        buttonsHTML += `<button class="msg-option-btn" onclick="app.prepareReply('${chatId}', '${msgId}')">
-            <i data-lucide="corner-down-left"></i>
-            ${this.lang === 'ar' ? 'رد' : 'Reply'}
-        </button>`;
+        if (!isAI) {
+            buttonsHTML += `<button class="msg-option-btn" onclick="app.prepareReply('${chatId}', '${msgId}')">
+                <i data-lucide="corner-down-left"></i>
+                ${this.lang === 'ar' ? 'رد' : 'Reply'}
+            </button>`;
+        }
 
         if (msg.text) {
             buttonsHTML += `<button class="msg-option-btn" onclick="app.copyMsg('${msgId}')">
@@ -2849,20 +2868,21 @@ class HamsterApp {
             </button>`;
         }
 
-        if (!buttonsHTML && !isMine) return;
-
         if (!buttonsHTML) return;
 
         // Reaction Bar
-        const emojis = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
-        const reactionsHTML = `
-            <div class="reaction-picker">
+        let reactionsHTML = '';
+        if (!isAI) {
+            const emojis = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
+            reactionsHTML = `
+                <div class="reaction-picker">
                 ${emojis.map(e => `<button class="reaction-btn" onclick="app.addReaction('${chatId}', '${msgId}', '${e}')">${e}</button>`).join('')}
                 <button class="reaction-btn add-reaction-trigger" onclick="app.showAllReactionsPicker('${chatId}', '${msgId}'); event.stopPropagation();" style="width: 26px; height: 26px; border-radius: 50%; background: var(--glass-hover, rgba(255, 255, 255, 0.08)); display: flex; align-items: center; justify-content: center; padding: 0; border: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.15)';" onmouseout="this.style.transform='scale(1)';">
                     <i data-lucide="plus" style="width: 14px; height: 14px; color: var(--text-secondary); margin: 0; opacity: 0.85;"></i>
                 </button>
             </div>
         `;
+        }
 
         if (buttonsHTML && isMine) {
             buttonsHTML += `<div class="msg-option-divider"></div>`;
@@ -3045,7 +3065,13 @@ class HamsterApp {
     async copyMsg(msgId) {
         const msg = this.currentMessages[msgId];
         if (msg && msg.text) {
-            navigator.clipboard.writeText(msg.text);
+            let textToCopy = msg.text.replace(/(https?:\/\/image\.pollinations\.ai\/prompt\/[^\s<]+)/g, '').trim();
+            if (!textToCopy && msg.text.includes('image.pollinations.ai')) {
+                textToCopy = this.lang === 'ar' ? '[صورة]' : '[Image]';
+            }
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy);
+            }
         }
         this.closeMsgOptionsPopup();
     }
