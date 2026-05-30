@@ -1154,9 +1154,14 @@ class HamsterApp {
         const isMine = msg.senderId === this.user?.uid;
         const linkColor = isMine ? '#ffffff' : 'var(--accent)';
 
-        // Linkify URLs
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        text = text.replace(urlRegex, `<a href="$1" target="_blank" style="color: ${linkColor}; text-decoration: underline; font-weight: 600;">$1</a>`);
+        // Linkify URLs or render Pollinations images
+        const urlRegex = /(https?:\/\/[^\s<]+)/g;
+        text = text.replace(urlRegex, function(url) {
+            if (url.includes('image.pollinations.ai/prompt/')) {
+                return `<div style="margin-top: 8px;"><img src="${url}" style="max-width: 100%; border-radius: 12px; display: block; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.1);" onclick="app.viewImage('${url}', false); event.stopPropagation();"></div>`;
+            }
+            return `<a href="${url}" target="_blank" style="color: ${linkColor}; text-decoration: underline; font-weight: 600;">${url}</a>`;
+        });
 
         // Simple Markdown: **bold**, *italic*, `code`
         text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
