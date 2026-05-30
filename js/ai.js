@@ -132,8 +132,22 @@ export function extendAI(HamsterApp) {
             }, { merge: true });
 
         } catch (err) {
-            console.error(err);
-            this.showAlert('AI Error', this.lang === 'ar' ? 'فشل الهامستر في الرد. تأكد من اتصالك بالإنترنت.' : 'Hamster failed to reply. Check your connection.');
+            console.error('[Hamster AI]', err);
+            // Show a friendly message in the chat bubble — never expose raw API errors
+            try {
+                const errMsg = this.lang === 'ar'
+                    ? 'حصل خطأ، حاول بعد قليل 🐹'
+                    : 'Something went wrong, please try again in a moment 🐹';
+                const errMsgRef = doc(collection(db, `chats/${chatId}/messages`));
+                await setDoc(errMsgRef, {
+                    chatId, text: errMsg, senderId: 'hamster_ai_bot',
+                    createdAt: serverTimestamp(), status: 'read'
+                });
+                await setDoc(chatRef, {
+                    lastMessage: { text: errMsg, senderId: 'hamster_ai_bot' },
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (_) { /* silently ignore */ }
         } finally {
             await setDoc(chatRef, { typing: { 'hamster_ai_bot': false } }, { merge: true });
         }
@@ -150,13 +164,19 @@ export function extendAI(HamsterApp) {
         });
 
         const data = await res.json();
-        console.log("Hamster AI Response:", data);
 
         if (!res.ok || data.error) {
-            return `API Error: ${data.error || 'Unknown error'}`;
+            // Log internally only — never expose to the user
+            console.error('[Hamster AI API]', res.status, data.error || data);
+            throw new Error('API_ERROR');
         }
 
-        return data.reply || 'No response from Hamster AI.';
+        if (!data.reply) {
+            console.warn('[Hamster AI] Empty reply from server');
+            throw new Error('EMPTY_REPLY');
+        }
+
+        return data.reply;
     };
 
     HamsterApp.prototype.markdownToHTML = function(text) {
