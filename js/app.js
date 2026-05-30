@@ -1174,9 +1174,9 @@ class HamsterApp {
                         onload="document.getElementById('loader-${uniqueId}').style.display='none'; this.style.display='block'; document.getElementById('download-${uniqueId}').style.display='flex';" 
                         onclick="app.viewImage('${url}', false); event.stopPropagation();">
                     <!-- Download Button -->
-                    <a href="${url}" download="HamsterAI-Art.jpg" target="_blank" id="download-${uniqueId}" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.5); color: white; padding: 8px; border-radius: 50%; backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(0,0,0,0.5)'; this.style.transform='scale(1)';">
+                    <button id="download-${uniqueId}" onclick="app.downloadImage('${url}'); event.stopPropagation();" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.5); color: white; padding: 8px; border-radius: 50%; backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(0,0,0,0.5)'; this.style.transform='scale(1)';">
                         <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x1="12" y1="15" y2="3"/></svg>
-                    </a>
+                    </button>
                 </div>`;
             }
             return `<a href="${url}" target="_blank" style="color: ${linkColor}; text-decoration: underline; font-weight: 600;">${url}</a>`;
@@ -2838,7 +2838,7 @@ class HamsterApp {
         const msg = this.currentMessages[msgId];
         if (!msg) return;
         const isMine = msg.senderId === this.user.uid;
-        const isAI = msg.senderId === this.user.uid + '_ai';
+        const isAI = msg.senderId === 'hamster_ai_bot';
         const canEdit = isMine && !msg.image && !msg.audio;
 
         let buttonsHTML = '';
