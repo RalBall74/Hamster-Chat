@@ -11,17 +11,18 @@ export function extendAI(HamsterApp) {
         if (!uid) return;
 
         // ── All limits stored server-side in Firestore (tamper-proof) ──
-        const limitsRef = doc(db, 'users', uid, 'aiLimits', 'usage');
+        const userRef = doc(db, 'users', uid);
 
-        let limitsSnap;
+        let userSnap;
         try {
-            limitsSnap = await getDoc(limitsRef);
+            userSnap = await getDoc(userRef);
         } catch (e) {
             console.error('Failed to read AI limits:', e);
             // Fail open — still allow the message so the user isn't blocked on Firestore errors
         }
 
-        const limitsData = limitsSnap?.data() || {};
+        const userData = userSnap?.data() || {};
+        const limitsData = userData.aiLimits || {};
 
         // ── Rate limit 1: 5 messages per 5 minutes (general) ──
         const WINDOW_MS = 5 * 60 * 1000;
@@ -66,16 +67,19 @@ export function extendAI(HamsterApp) {
         // ── Commit limit increments to Firestore atomically ──
         const newMsgWindowStart = (now - msgWindowStart > WINDOW_MS) ? now : msgWindowStart;
         const updatePayload = {
-            msgCount: msgCount + 1,
-            msgWindowStart: newMsgWindowStart,
+            'aiLimits.msgCount': msgCount + 1,
+            'aiLimits.msgWindowStart': newMsgWindowStart,
         };
         if (isImageRequest) {
-            updatePayload.imgCount = (imgDate === todayUTC) ? imgCount + 1 : 1;
-            updatePayload.imgDate = todayUTC;
+            updatePayload['aiLimits.imgCount'] = (imgDate === todayUTC) ? imgCount + 1 : 1;
+            updatePayload['aiLimits.imgDate'] = todayUTC;
         }
 
         // Save limits — don't await so we don't block the UX
-        setDoc(limitsRef, updatePayload, { merge: true }).catch(e => console.warn('Limit write failed:', e));
+        updateDoc(userRef, updatePayload).catch(e => {
+            console.warn('Limit write failed via updateDoc, trying setDoc merge:', e);
+            setDoc(userRef, { aiLimits: { msgCount: msgCount + 1, msgWindowStart: newMsgWindowStart, imgCount: updatePayload['aiLimits.imgCount'], imgDate: updatePayload['aiLimits.imgDate'] } }, { merge: true });
+        });
 
         // ── Proceed with message ──
         const input = document.getElementById('msg-input');
