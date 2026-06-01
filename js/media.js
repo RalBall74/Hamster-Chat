@@ -747,12 +747,8 @@ export function extendMedia(HamsterApp) {
         const msg = this.currentMessages ? this.currentMessages[msgId] : null;
         if (msg && msg.destroyVoiceOnPlay && msg.senderId !== this.user.uid) {
             try {
-                // Delete the message completely from Firestore
+                // Delete the message completely from Firestore silently
                 await deleteDoc(doc(db, `chats/${this.activeChatId}/messages`, msgId));
-                // Show a toast or small notification
-                if (typeof this.showAlert === 'function') {
-                    this.showAlert('Voice Message Deleted', this.lang === 'ar' ? 'تم حذف الرسالة الصوتية تلقائياً بناءً على إعدادات الخصوصية الخاصة بالمرسل.' : 'The voice message was automatically deleted per the sender\'s privacy settings.');
-                }
             } catch (err) {
                 console.error("Failed to auto-delete voice message", err);
             }
