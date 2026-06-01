@@ -2387,6 +2387,18 @@ class HamsterApp {
         if (chat.memberIds.includes(contactUid)) return;
 
         try {
+            const userSnap = await getDoc(doc(db, 'users', contactUid));
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                if (userData.privacy?.blockGroupAdds) {
+                    this.showAlert(
+                        this.lang === 'ar' ? 'تنبيه خصوصية' : 'Privacy Restricted',
+                        this.lang === 'ar' ? 'هذا المستخدم يمنع إضافته للمجموعات مباشرة من إعدادات الخصوصية الخاصة به. يمكنه الانضمام عبر رابط المجموعة.' : 'This user prevents being added to groups directly per their privacy settings. They can join via a group link.'
+                    );
+                    return;
+                }
+            }
+
             const newIds = [...chat.memberIds, contactUid];
             const newMemberData = { 
                 ...chat.memberData, 
@@ -3423,7 +3435,16 @@ class HamsterApp {
 
         if (this.isCreatingGroup) return;
 
-        const users = await this.findUsersByIdentifiers(membs);
+        const allUsers = await this.findUsersByIdentifiers(membs);
+        const users = allUsers.filter(u => !u.privacy?.blockGroupAdds);
+
+        if (allUsers.length > 0 && users.length === 0) {
+            this.showAlert(this.lang === 'ar' ? 'خصوصية' : 'Privacy Restricted', this.lang === 'ar' ? 'عذراً، إعدادات الخصوصية لهؤلاء الأعضاء تمنع إضافتهم مباشرة.' : 'Privacy settings prevent these users from being added directly.');
+            return;
+        } else if (allUsers.length > users.length) {
+            this.showAlert(this.lang === 'ar' ? 'تنبيه خصوصية' : 'Privacy Alert', this.lang === 'ar' ? 'بعض المستخدمين لم تتم إضافتهم بسبب إعدادات الخصوصية الخاصة بهم.' : 'Some users were skipped due to their privacy settings.');
+        }
+
         if (users.length === 0) {
             this.showAlert(this.lang === 'ar' ? 'أعضاء غير صالحين' : 'Invalid Members', this.lang === 'ar' ? 'لم يتم العثور على أعضاء صالحين للمجموعة.' : 'No valid users located.');
             return;

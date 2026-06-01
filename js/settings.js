@@ -352,6 +352,10 @@ export function extendSettings(HamsterApp) {
                     <div class="privacy-info"><h4>${this.lang === 'ar' ? 'تدمير الصوتيات ذاتياً' : 'Auto-delete Voice Notes'}</h4><p>${this.lang === 'ar' ? 'يحذف رسائلك الصوتية بعد الاستماع إليها' : 'Destroys your voice notes after playback'}</p></div>
                     <div class="toggle-switch ${this.userData?.privacy?.destroyVoiceOnPlay ? 'active' : ''}" onclick="app.togglePrivacy('destroyVoiceOnPlay', true)"></div>
                 </div>
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'منع الإضافة للمجموعات' : 'Block Group Adds'}</h4><p>${this.lang === 'ar' ? 'لا يمكن لأحد إضافتك مباشرة، الانضمام بالروابط فقط' : 'No one can add you directly, you must join via links'}</p></div>
+                    <div class="toggle-switch ${this.userData?.privacy?.blockGroupAdds ? 'active' : ''}" onclick="app.togglePrivacy('blockGroupAdds', true)"></div>
+                </div>
                 <div class="form-group" style="margin-top: 24px;">
                     <label>${this.lang === 'ar' ? 'تأثير الصوت (للخصوصية)' : 'Voice Effect (Privacy)'}</label>
                     <select id="voice-effect-sel" onchange="app.setVoiceEffect(this.value)">
