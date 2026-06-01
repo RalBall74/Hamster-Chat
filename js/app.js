@@ -1367,6 +1367,7 @@ class HamsterApp {
                                 </div>
                                 <div class="wa-audio-info">
                                     <span class="wa-duration" id="dur-${msgId}">...</span>
+                                    ${msg.destroyVoiceOnPlay ? '<span style="font-size: 11px; margin-inline-start: 4px; opacity: 0.8;" title="Self-Destruct">💣</span>' : ''}
                                 </div>
                             </div>
                             <audio id="audio-${msgId}" src="${msg.audio}" preload="metadata" ontimeupdate="app.updateAudioProgress('${msgId}')" onended="app.resetAudioPlayer('${msgId}')" onloadedmetadata="app.setAudioDuration('${msgId}')"></audio>

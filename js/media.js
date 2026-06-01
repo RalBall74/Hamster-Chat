@@ -1,4 +1,4 @@
-import { db, doc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from './firebase-config.js';
+import { db, doc, setDoc, updateDoc, addDoc, collection, serverTimestamp, deleteDoc } from './firebase-config.js';
 
 export function extendMedia(HamsterApp) {
     HamsterApp.prototype.viewImage = function(src, canDownload = true) {
@@ -578,6 +578,9 @@ export function extendMedia(HamsterApp) {
                 }
 
                 const payload = { senderId: this.user.uid, createdAt: serverTimestamp(), status: 'sent', ...e2eData };
+                if (this.userData?.privacy?.destroyVoiceOnPlay) {
+                    payload.destroyVoiceOnPlay = true;
+                }
                 if (this.replyToMsgId) payload.replyTo = this.replyToMsgId;
                 const msgRef = await addDoc(collection(db, `chats/${this.activeChatId}/messages`), payload);
                 const text = this.lang === 'ar' ? '🔒 وسائط مشفرة' : '🔒 Encrypted Media';
@@ -732,13 +735,28 @@ export function extendMedia(HamsterApp) {
         if (audio && audio.duration) audio.currentTime = (slider.value / 100) * audio.duration;
     };
 
-    HamsterApp.prototype.resetAudioPlayer = function(msgId) {
+    HamsterApp.prototype.resetAudioPlayer = async function(msgId) {
         const icon = document.getElementById(`icon-${msgId}`);
         const slider = document.querySelector(`#player-${msgId} .wa-audio-slider`);
         const bars = document.querySelectorAll(`#player-${msgId} .wa-waveform-bar`);
-        if (icon) { icon.setAttribute('data-lucide', 'play'); lucide.createIcons(); }
+        if (icon) { icon.setAttribute('data-lucide', 'play'); if(window.lucide) lucide.createIcons(); }
         if (slider) slider.value = 0;
         bars.forEach(bar => bar.classList.remove('active'));
+
+        // Handle auto-delete for "destroyVoiceOnPlay" setting
+        const msg = this.currentMessages ? this.currentMessages[msgId] : null;
+        if (msg && msg.destroyVoiceOnPlay && msg.senderId !== this.user.uid) {
+            try {
+                // Delete the message completely from Firestore
+                await deleteDoc(doc(db, `chats/${this.activeChatId}/messages`, msgId));
+                // Show a toast or small notification
+                if (typeof this.showAlert === 'function') {
+                    this.showAlert('Voice Message Deleted', this.lang === 'ar' ? 'تم حذف الرسالة الصوتية تلقائياً بناءً على إعدادات الخصوصية الخاصة بالمرسل.' : 'The voice message was automatically deleted per the sender\'s privacy settings.');
+                }
+            } catch (err) {
+                console.error("Failed to auto-delete voice message", err);
+            }
+        }
     };
 
     HamsterApp.prototype.setAudioDuration = function(msgId) {

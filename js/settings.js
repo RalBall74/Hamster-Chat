@@ -348,6 +348,10 @@ export function extendSettings(HamsterApp) {
                     <div class="privacy-info"><h4>${this.lang === 'ar' ? 'إخفاء من البحث' : 'Hide from Search'}</h4><p>${this.lang === 'ar' ? 'لن يجدك أحد إلا عبر QR أو الرابط' : 'Only discoverable via QR & Link'}</p></div>
                     <div class="toggle-switch ${hideFromSearch ? 'active' : ''}" onclick="app.togglePrivacy('hideFromSearch', true)"></div>
                 </div>
+                <div class="privacy-item">
+                    <div class="privacy-info"><h4>${this.lang === 'ar' ? 'تدمير الصوتيات ذاتياً' : 'Auto-delete Voice Notes'}</h4><p>${this.lang === 'ar' ? 'يحذف رسائلك الصوتية بعد الاستماع إليها' : 'Destroys your voice notes after playback'}</p></div>
+                    <div class="toggle-switch ${this.userData?.privacy?.destroyVoiceOnPlay ? 'active' : ''}" onclick="app.togglePrivacy('destroyVoiceOnPlay', true)"></div>
+                </div>
                 <div class="form-group" style="margin-top: 24px;">
                     <label>${this.lang === 'ar' ? 'تأثير الصوت (للخصوصية)' : 'Voice Effect (Privacy)'}</label>
                     <select id="voice-effect-sel" onchange="app.setVoiceEffect(this.value)">
