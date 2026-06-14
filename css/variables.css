@@ -1,0 +1,90 @@
+:root {
+    /* Brand Accent - Professional Indigo */
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+
+    /* Backgrounds - Light Mode */
+    --app-bg: #e2e8f0;
+    --rail-bg: rgba(255, 255, 255, 0.4);
+    --sidebar-bg: rgba(255, 255, 255, 0.6);
+    --main-bg: rgba(255, 255, 255, 0.75);
+
+    --glass-panel: rgba(255, 255, 255, 0.7);
+    --glass-panel-solid: #ffffff;
+    --glass-hover: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.5);
+
+    /* Text - Light Mode */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+
+    /* Status Colors */
+    --online: #10b981;
+    --danger: #ef4444;
+
+    /* Shadows & Effects */
+    --blur: 24px;
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    --shadow-glass: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+
+    /* Radii */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        /* Brand Accent */
+        --accent: #818cf8;
+        --accent-light: #a5b4fc;
+
+        /* Backgrounds - Dark Mode */
+        --app-bg: #020617;
+        --rail-bg: rgba(15, 23, 42, 0.6);
+        --sidebar-bg: rgba(15, 23, 42, 0.7);
+        --main-bg: rgba(15, 23, 42, 0.85);
+
+        --glass-panel: rgba(30, 41, 59, 0.6);
+        --glass-panel-solid: #1e293b;
+        --glass-hover: rgba(51, 65, 85, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+
+        /* Text - Dark Mode */
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+
+        /* Shadows & Effects */
+        --shadow-glass: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* Explicit data-theme override takes precedence */
+[data-theme="dark"] {
+    /* Brand Accent */
+    --accent: #818cf8;
+    --accent-light: #a5b4fc;
+
+    /* Backgrounds - Dark Mode */
+    --app-bg: #020617;
+    --rail-bg: rgba(15, 23, 42, 0.6);
+    --sidebar-bg: rgba(15, 23, 42, 0.7);
+    --main-bg: rgba(15, 23, 42, 0.85);
+
+    --glass-panel: rgba(30, 41, 59, 0.6);
+    --glass-panel-solid: #1e293b;
+    --glass-hover: rgba(51, 65, 85, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Text - Dark Mode */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Shadows & Effects */
+    --shadow-glass: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+}
