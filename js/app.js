@@ -1864,6 +1864,7 @@ class HamsterApp {
         try {
             const senderName = this.userData?.name || this.userData?.displayName || this.userData?.username || 'User';
             const chatName = chat.type === 'group' ? (chat.name || 'Group Chat') : null;
+            const senderAvatar = this.userData?.photoURL || this.user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=facc15&color=000000`;
             const backendUrl = 'https://hamster-chat.vercel.app/api/notify';
             
             await fetch(backendUrl, {
@@ -1872,6 +1873,7 @@ class HamsterApp {
                 body: JSON.stringify({
                     recipientIds,
                     senderName,
+                    senderAvatar,
                     chatName,
                     lang: this.lang
                 })

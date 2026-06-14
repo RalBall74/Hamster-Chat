@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const { recipientIds, senderName, chatName, lang } = req.body;
+    const { recipientIds, senderName, senderAvatar, chatName, lang } = req.body;
 
     if (!recipientIds || !Array.isArray(recipientIds) || recipientIds.length === 0) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -52,6 +52,8 @@ export default async function handler(req, res) {
                 headings: { en: "Hamster Chat", ar: "هامستر شات" },
                 contents: { en: text, ar: text },
                 chrome_web_badge: "https://hamster-chat.vercel.app/assets/badge.png",
+                chrome_web_icon: senderAvatar || "https://hamster-chat.vercel.app/assets/logo.jpg",
+                large_icon: senderAvatar || "https://hamster-chat.vercel.app/assets/logo.jpg",
                 priority: 10,
                 android_visibility: 1,
                 web_push_topic: "new_message"
