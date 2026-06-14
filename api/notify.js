@@ -36,6 +36,12 @@ export default async function handler(req, res) {
 
     let text = chatName ? `رسالة جديدة في ${chatName}` : `رسالة جديدة من ${senderName || 'مستخدم'}`;
 
+    let iconUrl = senderAvatar || "https://hamster-chat.vercel.app/assets/logo.jpg";
+    if (iconUrl && !iconUrl.startsWith('http')) {
+        const cleanPath = iconUrl.startsWith('/') ? iconUrl.slice(1) : iconUrl;
+        iconUrl = `https://hamster-chat.vercel.app/${cleanPath}`;
+    }
+
     try {
         const response = await fetch('https://onesignal.com/api/v1/notifications', {
             method: 'POST',
@@ -52,8 +58,8 @@ export default async function handler(req, res) {
                 headings: { en: "Hamster Chat", ar: "هامستر شات" },
                 contents: { en: text, ar: text },
                 chrome_web_badge: "https://hamster-chat.vercel.app/assets/badge.png",
-                chrome_web_icon: senderAvatar || "https://hamster-chat.vercel.app/assets/logo.jpg",
-                large_icon: senderAvatar || "https://hamster-chat.vercel.app/assets/logo.jpg",
+                chrome_web_icon: iconUrl,
+                large_icon: iconUrl,
                 priority: 10,
                 android_visibility: 1,
                 web_push_topic: "new_message"
